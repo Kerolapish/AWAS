@@ -5,8 +5,270 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Crop Management - AWAS</title>
     <link rel="stylesheet" href="../css/style.css">
-    
     <link rel="stylesheet" href="../css/crop.css">
+    <style>
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-content {
+            background-color: white;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 700px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        
+        .modal-header {
+            background-color: #2c7744;
+            color: white;
+            padding: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+        }
+        
+        .modal-header h2 {
+            margin: 0;
+        }
+        
+        .close-button {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        
+        .modal-body {
+            padding: 1.5rem;
+        }
+        
+        .crop-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .detail-group {
+            margin-bottom: 1rem;
+        }
+        
+        .detail-group label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            color: #2c7744;
+        }
+        
+        .detail-value {
+            padding: 0.5rem;
+            background-color: #f5f7fa;
+            border-radius: 4px;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+        
+        .btn {
+            padding: 0.7rem 1.5rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        
+        .btn-primary {
+            background-color: #4CAF50;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: #3d8b40;
+        }
+        
+        .btn-secondary {
+            background-color: #e0e0e0;
+            color: #333;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #d0d0d0;
+        }
+        
+        .btn-danger {
+            background-color: #f44336;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background-color: #d32f2f;
+        }
+        
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+            color: #2c7744;
+        }
+        
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 0.7rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 1.5rem;
+        }
+        
+        .tab {
+            padding: 0.7rem 1.5rem;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+        }
+        
+        .tab.active {
+            border-bottom: 3px solid #4CAF50;
+            color: #4CAF50;
+            font-weight: bold;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .notification {
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+            display: none;
+        }
+        
+        .notification.success {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+            border: 1px solid #c8e6c9;
+        }
+        
+        .notification.error {
+            background-color: #ffebee;
+            color: #c62828;
+            border: 1px solid #ffcdd2;
+        }
+        
+        /* Edit Form Styles */
+        .edit-form {
+            display: none;
+        }
+        
+        .edit-form.active {
+            display: block;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+        
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+            margin-top: 1.5rem;
+            padding-top: 1rem;
+            border-top: 1px solid #eee;
+        }
+        
+        .crop-image-preview {
+            width: 100%;
+            height: 200px;
+            background-color: #f5f7fa;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+            overflow: hidden;
+        }
+        
+        .crop-image-preview img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: cover;
+        }
+        
+        .upload-btn-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            width: 100%;
+        }
+        
+        .upload-btn {
+            border: 1px solid #4CAF50;
+            color: #4CAF50;
+            background-color: white;
+            padding: 0.7rem 1.5rem;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            text-align: center;
+            transition: all 0.3s;
+        }
+        
+        .upload-btn:hover {
+            background-color: #4CAF50;
+            color: white;
+        }
+        
+        .upload-btn-wrapper input[type=file] {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+    </style>
 </head>
 <body>
 
@@ -23,10 +285,10 @@
         
         <div class="crop-header">
             <h2>Your Crops</h2>
-            <button class="add-new-button">+ Add New Crop</button>
+            <button class="add-new-button" id="btn-add-new-crop">+ Add New Crop</button>
         </div>
 
-        <div class="crop-grid">
+        <div class="crop-grid" id="crop-grid">
 
             <article class="crop-card">
                 <div class="card-img-placeholder">
@@ -38,20 +300,20 @@
                     
                     <div class="card-stats">
                         <div class="stat-item">
-                            <span class="stat-number" id="crop-a-age">[45]</span>
+                            <span class="stat-number" id="crop-a-age">45</span>
                             <span class="stat-label">Days Old</span>
                         </div>
                         <div class="stat-item">
-                            <span class="stat-number" id="crop-a-health">[98]%</span>
+                            <span class="stat-number" id="crop-a-health">98%</span>
                             <span class="stat-label">Health</span>
                         </div>
                         <div class="stat-item">
-                            <span class="stat-number" id="crop-a-moisture">[65]%</span>
+                            <span class="stat-number" id="crop-a-moisture">65%</span>
                             <span class="stat-label">Soil Moisture</span>
                         </div>
                     </div>
                     
-                    <a href="#" class="btn-manage">Manage</a>
+                    <a href="#" class="btn-manage" data-crop-id="1" data-crop-name="Chili Padi - Field A">Manage</a>
                 </div>
             </article>
 
@@ -65,20 +327,20 @@
                     
                     <div class="card-stats">
                         <div class="stat-item">
-                            <span class="stat-number" id="crop-b-age">[70]</span>
+                            <span class="stat-number" id="crop-b-age">70</span>
                             <span class="stat-label">Days Old</span>
                         </div>
                         <div class="stat-item">
-                            <span class="stat-number" id="crop-b-health">[85]%</span>
+                            <span class="stat-number" id="crop-b-health">85%</span>
                             <span class="stat-label">Health</span>
                         </div>
                         <div class="stat-item">
-                            <span class="stat-number" id="crop-b-moisture">[35]%</span>
+                            <span class="stat-number" id="crop-b-moisture">35%</span>
                             <span class="stat-label">Soil Moisture</span>
                         </div>
                     </div>
                     
-                    <a href="#" class="btn-manage">Manage</a>
+                    <a href="#" class="btn-manage" data-crop-id="2" data-crop-name="Corn - Field B">Manage</a>
                 </div>
             </article>
 
@@ -92,25 +354,833 @@
                     
                     <div class="card-stats">
                         <div class="stat-item">
-                            <span class="stat-number" id="crop-c-age">[20]</span>
+                            <span class="stat-number" id="crop-c-age">20</span>
                             <span class="stat-label">Days Old</span>
                         </div>
                         <div class="stat-item">
-                            <span class="stat-number" id="crop-c-health">[99]%</span>
+                            <span class="stat-number" id="crop-c-health">99%</span>
                             <span class="stat-label">Health</span>
                         </div>
                         <div class="stat-item">
-                            <span class="stat-number" id="crop-c-moisture">[75]%</span>
+                            <span class="stat-number" id="crop-c-moisture">75%</span>
                             <span class="stat-label">Soil Moisture</span>
                         </div>
                     </div>
                     
-                    <a href="#" class="btn-manage">Manage</a>
+                    <a href="#" class="btn-manage" data-crop-id="3" data-crop-name="Lettuce - Greenhouse 1">Manage</a>
                 </div>
             </article>
-            
-            </div>
+        </div>
     </main>
 
+    <!-- Crop Management Modal -->
+    <div id="cropModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title">Manage Crop</h2>
+                <button class="close-button">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="notification" class="notification"></div>
+                
+                <div class="tabs">
+                    <div class="tab active" data-tab="details">Details</div>
+                    <div class="tab" data-tab="actions">Actions</div>
+                    <div class="tab" data-tab="history">History</div>
+                </div>
+                
+                <!-- Details Tab -->
+                <div id="details-tab" class="tab-content active">
+                    <div class="crop-details">
+                        <div>
+                            <div class="detail-group">
+                                <label>Crop Name</label>
+                                <div class="detail-value" id="detail-crop-name">-</div>
+                            </div>
+                            <div class="detail-group">
+                                <label>Days Old</label>
+                                <div class="detail-value" id="detail-days-old">-</div>
+                            </div>
+                            <div class="detail-group">
+                                <label>Health Status</label>
+                                <div class="detail-value" id="detail-health">-</div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="detail-group">
+                                <label>Soil Moisture</label>
+                                <div class="detail-value" id="detail-moisture">-</div>
+                            </div>
+                            <div class="detail-group">
+                                <label>Last Watered</label>
+                                <div class="detail-value" id="detail-last-watered">-</div>
+                            </div>
+                            <div class="detail-group">
+                                <label>Next Fertilization</label>
+                                <div class="detail-value" id="detail-next-fertilization">-</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="action-buttons">
+                        <button class="btn btn-primary" id="btn-edit">Edit Details</button>
+                        <button class="btn btn-secondary" id="btn-refresh">Refresh Data</button>
+                    </div>
+                </div>
+                
+                <!-- Edit Form -->
+                <div id="edit-form" class="edit-form">
+                    <h3 style="margin-bottom: 1.5rem; color: #2c7744;">Edit Crop Details</h3>
+                    
+                    <div class="crop-image-preview">
+                        <span id="image-placeholder">Crop Image Preview</span>
+                        <img id="crop-image-preview" src="" style="display: none;">
+                    </div>
+                    
+                    <div class="upload-btn-wrapper">
+                        <button class="upload-btn">Upload Crop Image</button>
+                        <input type="file" id="crop-image" accept="image/*">
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="edit-crop-name">Crop Name</label>
+                            <input type="text" id="edit-crop-name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="edit-crop-type">Crop Type</label>
+                            <select id="edit-crop-type">
+                                <option value="vegetable">Vegetable</option>
+                                <option value="fruit">Fruit</option>
+                                <option value="grain">Grain</option>
+                                <option value="herb">Herb</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="edit-field-location">Field Location</label>
+                            <input type="text" id="edit-field-location" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="edit-planting-date">Planting Date</label>
+                            <input type="date" id="edit-planting-date" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="edit-health-status">Health Status (%)</label>
+                            <input type="number" id="edit-health-status" min="0" max="100" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="edit-soil-moisture">Soil Moisture (%)</label>
+                            <input type="number" id="edit-soil-moisture" min="0" max="100" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="edit-last-watered">Last Watered</label>
+                            <input type="date" id="edit-last-watered" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="edit-next-fertilization">Next Fertilization</label>
+                            <input type="date" id="edit-next-fertilization" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="edit-notes">Additional Notes</label>
+                        <textarea id="edit-notes" placeholder="Add any additional notes about this crop..."></textarea>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button class="btn btn-secondary" id="btn-cancel-edit">Cancel</button>
+                        <button class="btn btn-primary" id="btn-save-changes">Save Changes</button>
+                    </div>
+                </div>
+                
+                <!-- Actions Tab -->
+                <div id="actions-tab" class="tab-content">
+                    <div class="form-group">
+                        <label for="action-type">Action Type</label>
+                        <select id="action-type">
+                            <option value="">Select an action</option>
+                            <option value="water">Water Crop</option>
+                            <option value="fertilize">Apply Fertilizer</option>
+                            <option value="pesticide">Apply Pesticide</option>
+                            <option value="harvest">Harvest</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group" id="action-details" style="display: none;">
+                        <label for="action-notes">Notes</label>
+                        <textarea id="action-notes" placeholder="Add any relevant notes about this action..."></textarea>
+                    </div>
+                    
+                    <div class="action-buttons">
+                        <button class="btn btn-primary" id="btn-log-action">Log Action</button>
+                    </div>
+                </div>
+                
+                <!-- History Tab -->
+                <div id="history-tab" class="tab-content">
+                    <div id="history-list">
+                        <!-- History items will be added here dynamically -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add New Crop Modal -->
+    <div id="addCropModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Add New Crop</h2>
+                <button class="close-button" id="close-add-crop">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="add-crop-notification" class="notification"></div>
+                
+                <form id="add-crop-form">
+                    <div class="crop-image-preview">
+                        <span id="add-image-placeholder">Crop Image Preview</span>
+                        <img id="add-crop-image-preview" src="" style="display: none;">
+                    </div>
+                    
+                    <div class="upload-btn-wrapper">
+                        <button type="button" class="upload-btn">Upload Crop Image</button>
+                        <input type="file" id="add-crop-image" accept="image/*">
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="add-crop-name">Crop Name *</label>
+                            <input type="text" id="add-crop-name" required placeholder="e.g., Tomato - Field C">
+                        </div>
+                        <div class="form-group">
+                            <label for="add-crop-type">Crop Type *</label>
+                            <select id="add-crop-type" required>
+                                <option value="">Select crop type</option>
+                                <option value="vegetable">Vegetable</option>
+                                <option value="fruit">Fruit</option>
+                                <option value="grain">Grain</option>
+                                <option value="herb">Herb</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="add-field-location">Field Location *</label>
+                            <input type="text" id="add-field-location" required placeholder="e.g., Field C, Greenhouse 2">
+                        </div>
+                        <div class="form-group">
+                            <label for="add-planting-date">Planting Date *</label>
+                            <input type="date" id="add-planting-date" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="add-health-status">Initial Health Status (%) *</label>
+                            <input type="number" id="add-health-status" min="0" max="100" value="95" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="add-soil-moisture">Initial Soil Moisture (%) *</label>
+                            <input type="number" id="add-soil-moisture" min="0" max="100" value="70" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="add-notes">Initial Notes</label>
+                        <textarea id="add-notes" placeholder="Add any initial notes about this crop..."></textarea>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" id="btn-cancel-add">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Add Crop</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const modal = document.getElementById('cropModal');
+        const addCropModal = document.getElementById('addCropModal');
+        const closeButton = document.querySelector('.close-button');
+        const closeAddCropButton = document.getElementById('close-add-crop');
+        const manageButtons = document.querySelectorAll('.btn-manage');
+        const tabs = document.querySelectorAll('.tab');
+        const tabContents = document.querySelectorAll('.tab-content');
+        const actionTypeSelect = document.getElementById('action-type');
+        const actionDetails = document.getElementById('action-details');
+        const notification = document.getElementById('notification');
+        const addCropNotification = document.getElementById('add-crop-notification');
+        const addCropButton = document.getElementById('btn-add-new-crop');
+        const cancelAddButton = document.getElementById('btn-cancel-add');
+        const addCropForm = document.getElementById('add-crop-form');
+        const cropGrid = document.getElementById('crop-grid');
+        
+        // Edit form elements
+        const editForm = document.getElementById('edit-form');
+        const btnEdit = document.getElementById('btn-edit');
+        const btnCancelEdit = document.getElementById('btn-cancel-edit');
+        const btnSaveChanges = document.getElementById('btn-save-changes');
+        const cropImageInput = document.getElementById('crop-image');
+        const cropImagePreview = document.getElementById('crop-image-preview');
+        const imagePlaceholder = document.getElementById('image-placeholder');
+        
+        // Add crop form elements
+        const addCropImageInput = document.getElementById('add-crop-image');
+        const addCropImagePreview = document.getElementById('add-crop-image-preview');
+        const addImagePlaceholder = document.getElementById('add-image-placeholder');
+        
+        // Crop data (in a real app, this would come from a database)
+        let cropData = {
+            1: {
+                name: "Chili Padi - Field A",
+                type: "vegetable",
+                location: "Field A",
+                plantingDate: "2023-05-01",
+                daysOld: 45,
+                health: "98",
+                moisture: "65",
+                lastWatered: "2023-06-15",
+                nextFertilization: "2023-06-25",
+                notes: "Growing well, no issues detected.",
+                history: [
+                    { date: "2023-06-15", action: "Watered", notes: "Regular watering" },
+                    { date: "2023-06-10", action: "Fertilized", notes: "Applied NPK fertilizer" },
+                    { date: "2023-06-05", action: "Pesticide", notes: "Applied organic pesticide" }
+                ]
+            },
+            2: {
+                name: "Corn - Field B",
+                type: "grain",
+                location: "Field B",
+                plantingDate: "2023-04-01",
+                daysOld: 70,
+                health: "85",
+                moisture: "35",
+                lastWatered: "2023-06-12",
+                nextFertilization: "2023-06-20",
+                notes: "Soil moisture is low, needs watering.",
+                history: [
+                    { date: "2023-06-12", action: "Watered", notes: "Deep watering" },
+                    { date: "2023-06-05", action: "Fertilized", notes: "Applied nitrogen fertilizer" },
+                    { date: "2023-05-28", action: "Pesticide", notes: "Applied for pest control" }
+                ]
+            },
+            3: {
+                name: "Lettuce - Greenhouse 1",
+                type: "vegetable",
+                location: "Greenhouse 1",
+                plantingDate: "2023-05-27",
+                daysOld: 20,
+                health: "99",
+                moisture: "75",
+                lastWatered: "2023-06-16",
+                nextFertilization: "2023-06-26",
+                notes: "Excellent growth conditions.",
+                history: [
+                    { date: "2023-06-16", action: "Watered", notes: "Light watering" },
+                    { date: "2023-06-10", action: "Fertilized", notes: "Applied liquid fertilizer" }
+                ]
+            }
+        };
+        
+        // Track next crop ID
+        let nextCropId = 4;
+        
+        // Event Listeners
+        manageButtons.forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                const cropId = this.getAttribute('data-crop-id');
+                openCropModal(cropId);
+            });
+        });
+        
+        closeButton.addEventListener('click', closeModal);
+        closeAddCropButton.addEventListener('click', closeAddCropModal);
+        
+        window.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                closeModal();
+            }
+            if (e.target === addCropModal) {
+                closeAddCropModal();
+            }
+        });
+        
+        tabs.forEach(tab => {
+            tab.addEventListener('click', function() {
+                const tabId = this.getAttribute('data-tab');
+                switchTab(tabId);
+            });
+        });
+        
+        actionTypeSelect.addEventListener('change', function() {
+            if (this.value) {
+                actionDetails.style.display = 'block';
+            } else {
+                actionDetails.style.display = 'none';
+            }
+        });
+        
+        document.getElementById('btn-log-action').addEventListener('click', logAction);
+        document.getElementById('btn-refresh').addEventListener('click', refreshCropData);
+        
+        // Edit form event listeners
+        btnEdit.addEventListener('click', showEditForm);
+        btnCancelEdit.addEventListener('click', hideEditForm);
+        btnSaveChanges.addEventListener('click', saveCropChanges);
+        cropImageInput.addEventListener('change', handleImageUpload);
+        
+        // Add crop event listeners
+        addCropButton.addEventListener('click', openAddCropModal);
+        cancelAddButton.addEventListener('click', closeAddCropModal);
+        addCropForm.addEventListener('submit', addNewCrop);
+        addCropImageInput.addEventListener('change', handleAddImageUpload);
+        
+        // Set today's date as default for planting date
+        document.getElementById('add-planting-date').valueAsDate = new Date();
+        
+        // Functions
+        function openCropModal(cropId) {
+            const crop = cropData[cropId];
+            if (!crop) return;
+            
+            // Update modal title
+            document.getElementById('modal-title').textContent = `Manage: ${crop.name}`;
+            
+            // Populate details
+            document.getElementById('detail-crop-name').textContent = crop.name;
+            document.getElementById('detail-days-old').textContent = crop.daysOld;
+            document.getElementById('detail-health').textContent = crop.health + '%';
+            document.getElementById('detail-moisture').textContent = crop.moisture + '%';
+            document.getElementById('detail-last-watered').textContent = crop.lastWatered;
+            document.getElementById('detail-next-fertilization').textContent = crop.nextFertilization;
+            
+            // Populate history
+            populateHistory(crop.history);
+            
+            // Reset form
+            actionTypeSelect.value = '';
+            actionDetails.style.display = 'none';
+            document.getElementById('action-notes').value = '';
+            
+            // Store current crop ID for later use
+            modal.setAttribute('data-current-crop', cropId);
+            
+            // Show modal
+            modal.style.display = 'flex';
+            
+            // Switch to details tab
+            switchTab('details');
+            
+            // Hide edit form
+            hideEditForm();
+        }
+        
+        function closeModal() {
+            modal.style.display = 'none';
+        }
+        
+        function openAddCropModal() {
+            // Reset form
+            addCropForm.reset();
+            addCropImagePreview.style.display = 'none';
+            addImagePlaceholder.style.display = 'block';
+            addCropNotification.style.display = 'none';
+            
+            // Set today's date as default for planting date
+            document.getElementById('add-planting-date').valueAsDate = new Date();
+            
+            // Show modal
+            addCropModal.style.display = 'flex';
+        }
+        
+        function closeAddCropModal() {
+            addCropModal.style.display = 'none';
+        }
+        
+        function switchTab(tabId) {
+            // Remove active class from all tabs and contents
+            tabs.forEach(tab => tab.classList.remove('active'));
+            tabContents.forEach(content => content.classList.remove('active'));
+            
+            // Add active class to selected tab and content
+            document.querySelector(`.tab[data-tab="${tabId}"]`).classList.add('active');
+            document.getElementById(`${tabId}-tab`).classList.add('active');
+        }
+        
+        function populateHistory(history) {
+            const historyList = document.getElementById('history-list');
+            historyList.innerHTML = '';
+            
+            if (history.length === 0) {
+                historyList.innerHTML = '<p>No history available for this crop.</p>';
+                return;
+            }
+            
+            history.forEach(item => {
+                const historyItem = document.createElement('div');
+                historyItem.className = 'detail-group';
+                historyItem.innerHTML = `
+                    <div style="display: flex; justify-content: space-between;">
+                        <span><strong>${item.action}</strong></span>
+                        <span>${item.date}</span>
+                    </div>
+                    <div class="detail-value" style="margin-top: 0.5rem;">${item.notes}</div>
+                `;
+                historyList.appendChild(historyItem);
+            });
+        }
+        
+        function logAction() {
+            const cropId = modal.getAttribute('data-current-crop');
+            const actionType = actionTypeSelect.value;
+            const notes = document.getElementById('action-notes').value;
+            
+            if (!actionType) {
+                showNotification('Please select an action type.', 'error');
+                return;
+            }
+            
+            // In a real app, this would send data to a server
+            const actionNames = {
+                'water': 'Watered',
+                'fertilize': 'Fertilized',
+                'pesticide': 'Applied Pesticide',
+                'harvest': 'Harvested',
+                'other': 'Other Action'
+            };
+            
+            const today = new Date().toISOString().split('T')[0];
+            const newAction = {
+                date: today,
+                action: actionNames[actionType],
+                notes: notes || 'No additional notes'
+            };
+            
+            // Add to crop history
+            cropData[cropId].history.unshift(newAction);
+            
+            // Update UI
+            populateHistory(cropData[cropId].history);
+            
+            // Reset form
+            actionTypeSelect.value = '';
+            actionDetails.style.display = 'none';
+            document.getElementById('action-notes').value = '';
+            
+            showNotification('Action logged successfully!', 'success');
+        }
+        
+        function refreshCropData() {
+            // In a real app, this would fetch updated data from sensors/API
+            const cropId = modal.getAttribute('data-current-crop');
+            const crop = cropData[cropId];
+            
+            // Simulate data refresh with slight variations
+            crop.daysOld += 1;
+            crop.moisture = Math.max(0, Math.min(100, parseInt(crop.moisture) + (Math.random() * 10 - 5))).toFixed(0);
+            
+            // Update UI
+            document.getElementById('detail-days-old').textContent = crop.daysOld;
+            document.getElementById('detail-moisture').textContent = crop.moisture + '%';
+            
+            showNotification('Crop data refreshed!', 'success');
+        }
+        
+        function showEditForm() {
+            const cropId = modal.getAttribute('data-current-crop');
+            const crop = cropData[cropId];
+            
+            // Populate form with current data
+            document.getElementById('edit-crop-name').value = crop.name;
+            document.getElementById('edit-crop-type').value = crop.type;
+            document.getElementById('edit-field-location').value = crop.location;
+            document.getElementById('edit-planting-date').value = crop.plantingDate;
+            document.getElementById('edit-health-status').value = crop.health;
+            document.getElementById('edit-soil-moisture').value = crop.moisture;
+            document.getElementById('edit-last-watered').value = crop.lastWatered;
+            document.getElementById('edit-next-fertilization').value = crop.nextFertilization;
+            document.getElementById('edit-notes').value = crop.notes || '';
+            
+            // Hide details and show edit form
+            document.getElementById('details-tab').style.display = 'none';
+            editForm.classList.add('active');
+        }
+        
+        function hideEditForm() {
+            // Show details and hide edit form
+            document.getElementById('details-tab').style.display = 'block';
+            editForm.classList.remove('active');
+        }
+        
+        function saveCropChanges() {
+            const cropId = modal.getAttribute('data-current-crop');
+            const crop = cropData[cropId];
+            
+            // Get form values
+            const cropName = document.getElementById('edit-crop-name').value;
+            const cropType = document.getElementById('edit-crop-type').value;
+            const location = document.getElementById('edit-field-location').value;
+            const plantingDate = document.getElementById('edit-planting-date').value;
+            const health = document.getElementById('edit-health-status').value;
+            const moisture = document.getElementById('edit-soil-moisture').value;
+            const lastWatered = document.getElementById('edit-last-watered').value;
+            const nextFertilization = document.getElementById('edit-next-fertilization').value;
+            const notes = document.getElementById('edit-notes').value;
+            
+            // Validate required fields
+            if (!cropName || !location || !plantingDate || !health || !moisture || !lastWatered || !nextFertilization) {
+                showNotification('Please fill in all required fields.', 'error');
+                return;
+            }
+            
+            // Update crop data
+            crop.name = cropName;
+            crop.type = cropType;
+            crop.location = location;
+            crop.plantingDate = plantingDate;
+            crop.health = health;
+            crop.moisture = moisture;
+            crop.lastWatered = lastWatered;
+            crop.nextFertilization = nextFertilization;
+            crop.notes = notes;
+            
+            // Calculate days old
+            const today = new Date();
+            const planting = new Date(plantingDate);
+            const diffTime = Math.abs(today - planting);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            crop.daysOld = diffDays;
+            
+            // Update UI
+            document.getElementById('modal-title').textContent = `Manage: ${crop.name}`;
+            document.getElementById('detail-crop-name').textContent = crop.name;
+            document.getElementById('detail-days-old').textContent = crop.daysOld;
+            document.getElementById('detail-health').textContent = crop.health + '%';
+            document.getElementById('detail-moisture').textContent = crop.moisture + '%';
+            document.getElementById('detail-last-watered').textContent = crop.lastWatered;
+            document.getElementById('detail-next-fertilization').textContent = crop.nextFertilization;
+            
+            // Update the crop card in the main view
+            updateCropCard(cropId, crop);
+            
+            // Hide edit form
+            hideEditForm();
+            
+            showNotification('Crop details updated successfully!', 'success');
+        }
+        
+        function updateCropCard(cropId, crop) {
+            const card = document.querySelector(`.btn-manage[data-crop-id="${cropId}"]`).closest('.crop-card');
+            
+            // Update card content
+            card.querySelector('h3').textContent = crop.name;
+            card.querySelector('.stat-number').textContent = crop.daysOld;
+            card.querySelectorAll('.stat-number')[1].textContent = crop.health + '%';
+            card.querySelectorAll('.stat-number')[2].textContent = crop.moisture + '%';
+            
+            // Update status badge if needed
+            const healthValue = parseInt(crop.health);
+            const statusBadge = card.querySelector('.status-badge');
+            
+            if (healthValue >= 90) {
+                statusBadge.className = 'status-badge status-good';
+                statusBadge.textContent = 'Good';
+            } else if (healthValue >= 70) {
+                statusBadge.className = 'status-badge status-warn';
+                statusBadge.textContent = 'Warning';
+            } else {
+                statusBadge.className = 'status-badge status-warn';
+                statusBadge.textContent = 'Poor';
+            }
+        }
+        
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    cropImagePreview.src = e.target.result;
+                    cropImagePreview.style.display = 'block';
+                    imagePlaceholder.style.display = 'none';
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+        
+        function handleAddImageUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    addCropImagePreview.src = e.target.result;
+                    addCropImagePreview.style.display = 'block';
+                    addImagePlaceholder.style.display = 'none';
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+        
+        function addNewCrop(e) {
+            e.preventDefault();
+            
+            // Get form values
+            const cropName = document.getElementById('add-crop-name').value;
+            const cropType = document.getElementById('add-crop-type').value;
+            const location = document.getElementById('add-field-location').value;
+            const plantingDate = document.getElementById('add-planting-date').value;
+            const health = document.getElementById('add-health-status').value;
+            const moisture = document.getElementById('add-soil-moisture').value;
+            const notes = document.getElementById('add-notes').value;
+            
+            // Validate required fields
+            if (!cropName || !cropType || !location || !plantingDate || !health || !moisture) {
+                showAddCropNotification('Please fill in all required fields.', 'error');
+                return;
+            }
+            
+            // Calculate days old
+            const today = new Date();
+            const planting = new Date(plantingDate);
+            const diffTime = Math.abs(today - planting);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            // Create new crop object
+            const newCrop = {
+                name: cropName,
+                type: cropType,
+                location: location,
+                plantingDate: plantingDate,
+                daysOld: diffDays,
+                health: health,
+                moisture: moisture,
+                lastWatered: plantingDate, // Set planting date as last watered initially
+                nextFertilization: getNextFertilizationDate(plantingDate),
+                notes: notes || '',
+                history: [
+                    { 
+                        date: plantingDate, 
+                        action: 'Planted', 
+                        notes: 'New crop planted' 
+                    }
+                ]
+            };
+            
+            // Add to crop data
+            cropData[nextCropId] = newCrop;
+            
+            // Create and add new crop card to the grid
+            createCropCard(nextCropId, newCrop);
+            
+            // Increment next crop ID
+            nextCropId++;
+            
+            // Close modal
+            closeAddCropModal();
+            
+            // Show success message
+            showNotification('New crop added successfully!', 'success');
+        }
+        
+        function getNextFertilizationDate(plantingDate) {
+            // Set next fertilization to 30 days after planting
+            const planting = new Date(plantingDate);
+            const nextFertilization = new Date(planting);
+            nextFertilization.setDate(planting.getDate() + 30);
+            return nextFertilization.toISOString().split('T')[0];
+        }
+        
+        function createCropCard(cropId, crop) {
+            // Determine status based on health
+            const healthValue = parseInt(crop.health);
+            let statusClass = 'status-good';
+            let statusText = 'Good';
+            
+            if (healthValue < 70) {
+                statusClass = 'status-warn';
+                statusText = 'Poor';
+            } else if (healthValue < 90) {
+                statusClass = 'status-warn';
+                statusText = 'Warning';
+            }
+            
+            // Create new crop card HTML
+            const cropCard = document.createElement('article');
+            cropCard.className = 'crop-card';
+            cropCard.innerHTML = `
+                <div class="card-img-placeholder">
+                    <span>[Crop Image]</span>
+                </div>
+                <div class="card-content">
+                    <h3>${crop.name}</h3>
+                    <span class="status-badge ${statusClass}">${statusText}</span>
+                    
+                    <div class="card-stats">
+                        <div class="stat-item">
+                            <span class="stat-number">${crop.daysOld}</span>
+                            <span class="stat-label">Days Old</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number">${crop.health}%</span>
+                            <span class="stat-label">Health</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number">${crop.moisture}%</span>
+                            <span class="stat-label">Soil Moisture</span>
+                        </div>
+                    </div>
+                    
+                    <a href="#" class="btn-manage" data-crop-id="${cropId}" data-crop-name="${crop.name}">Manage</a>
+                </div>
+            `;
+            
+            // Add to grid
+            cropGrid.appendChild(cropCard);
+            
+            // Add event listener to the new manage button
+            const newManageButton = cropCard.querySelector('.btn-manage');
+            newManageButton.addEventListener('click', function(e) {
+                e.preventDefault();
+                const cropId = this.getAttribute('data-crop-id');
+                openCropModal(cropId);
+            });
+        }
+        
+        function showNotification(message, type) {
+            notification.textContent = message;
+            notification.className = `notification ${type}`;
+            notification.style.display = 'block';
+            
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 3000);
+        }
+        
+        function showAddCropNotification(message, type) {
+            addCropNotification.textContent = message;
+            addCropNotification.className = `notification ${type}`;
+            addCropNotification.style.display = 'block';
+            
+            setTimeout(() => {
+                addCropNotification.style.display = 'none';
+            }, 3000);
+        }
+    </script>
 </body>
 </html>
