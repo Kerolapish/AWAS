@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crop Ledger - AWAS</title>
+    <link rel="stylesheet" href="../css/style.css">
+    
+    <link rel="stylesheet" href="../css/ledger.css">
+</head>
+<body>
+
+    <header>
+        <h1>Agricultural Weather Alert System (AWAS)</h1>
+        <nav class="main-nav">
+            <a href="index.html" class="nav-button">Weather</a>
+            <a href="crop.html" class="nav-button">Crop</a>
+            <a href="ledger.html" class="nav-button active">Ledger</a>
+        </nav>
+    </header>
+
+    <main class="ledger-container">
+
+        <div class="ledger-summary">
+            <div class="summary-card">
+                <h3>Total Revenue</h3>
+                <span class="amount" id="total-revenue">RM 0.00</span>
+            </div>
+            <div class="summary-card">
+                <h3>Total Expenses</h3>
+                <span class="amount" id="total-expenses">RM 0.00</span>
+            </div>
+            <div class="summary-card">
+                <h3>Net Profit / Loss</h3>
+                <span class="amount" id="net-profit">RM 0.00</span>
+            </div>
+        </div>
+
+        <div class="ledger-controls">
+            <div class="control-group">
+                <label for="crop-select">View Ledger For:</label>
+                <select id="crop-select">
+                    <option value="all">All Crops</option>
+                    <option value="chili-a">Chili Padi - Field A</option>
+                    <option value="corn-b">Corn - Field B</option>
+                    <option value="lettuce-g1">Lettuce - Greenhouse 1</option>
+                </select>
+            </div>
+            <button class="btn-primary">+ Add Transaction</button>
+        </div>
+
+        <section class="card">
+            <h3>Transaction History</h3>
+            <div class="table-responsive">
+                <table class="ledger-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Description</th>
+                            <th>Category</th>
+                            <th class="text-right">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transaction-body">
+                        <tr>
+                            <td>2025-10-01</td>
+                            <td>Purchase 20kg Bena 10 Fertilizer</td>
+                            <td><span class="category-badge category-expense">Expense</span></td>
+                            <td class="amount-expense text-right">RM 150.00</td>
+                        </tr>
+                        <tr>
+                            <td>2025-10-03</td>
+                            <td>Chili Padi Seeds (500g)</td>
+                            <td><span class="category-badge category-expense">Expense</span></td>
+                            <td class="amount-expense text-right">RM 75.00</td>
+                        </tr>
+                        <tr>
+                            <td>2025-10-28</td>
+                            <td>Sale of 10kg Corn to Pasar Tani</td>
+                            <td><span class="category-badge category-revenue">Revenue</span></td>
+                            <td class="amount-revenue text-right">RM 350.00</td>
+                        </tr>
+                        <tr>
+                            <td>2

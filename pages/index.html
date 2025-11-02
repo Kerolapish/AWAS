@@ -3,115 +3,148 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AWAS Weather</title>
+    <title>AWAS Dashboard</title>
     <link rel="stylesheet" href="../css/style.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="app-container">
-        <header class="app-header">
-            <h1>Weather Dashboard</h1>
-        </header>
-        
-        <main id="app-content" class="app-content">
-            <div class="page-content">
-                <button id="fetch-weather-btn" class="btn">Refresh Local Weather</button>
-                <div id="weather-output"></div>
-            </div>
-        </main>
-    </div>
 
-    <template id="template-loading">
-        <div class="loading-spinner"></div>
-    </template>
-    
-    <template id="template-error">
-        <p class="error-full-page"></p>
-    </template>
-    
-    <template id="template-weather">
-        <div class="page-content">
-            <button id="fetch-weather-btn" class="btn">Refresh Local Weather</button>
-            <div id="weather-output"></div>
-        </div>
-    </template>
-    
-    <template id="template-reminders">
-        <div class="page-content">
-            <form id="reminder-form" class="form-row">
-                <input type="text" id="reminder-text" placeholder="Add new reminder..." required>
-                <button type="submit" class="btn-small">+</button>
-            </form>
-            <div id="reminder-list" class="item-list"></div>
-        </div>
-    </template>
-    
-    <template id="template-ledger">
-        <div class="page-content">
-            <div id="profit-chart-container">
-                <h3>Profit Per Crop</h3>
-                <div id="profit-chart"></div>
-            </div>
-            
-            <form id="ledger-form" class="form-card">
-                <h3>Add New Entry</h3>
-                <div class="form-group">
-                    <label for="ledger-crop">Crop Name</label>
-                    <input type="text" id="ledger-crop" required>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="ledger-revenue">Revenue (RM)</label>
-                        <input type="number" id="ledger-revenue" step="0.01" value="0.00" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="ledger-cost">Cost (RM)</label>
-                        <input type="number" id="ledger-cost" step="0.01" value="0.00" required>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label for="ledger-date">Date</label>
-                    <input type="date" id="ledger-date" required>
-                </div>
-                <button type="submit" class="btn">Save Entry</button>
-            </form>
-            
-            <h3 class="list-header">All Entries</h3>
-            <div id="ledger-list" class="item-list"></div>
-        </div>
-    </template>
+    <header>
+        <h1>Agricultural Weather Alert System (AWAS)</h1>
+        <nav class="main-nav">
+            <a href="index.html" class="nav-button active">Weather</a>
+            <a href="crop.html" class="nav-button">Crop</a>
+            <a href="ledger.html" class="nav-button">Ledger</a>
+        </nav>
+    </header>
 
-    <template id="template-crops">
-        <div class="page-content" id="crop-list">
-            </div>
-    </template>
-    
-    <template id="template-crop-detail">
-        <div class="page-content">
-            <button class="btn-back" data-page="crops">&larr; Back to Crops</button>
-            <div class="crop-detail-card">
-                <img id="crop-image" src="" alt="Crop Image" class="crop-detail-image">
-                <h2 id="crop-name"></h2>
-                <p><strong>Best Season:</strong> <span id="crop-season"></span></p>
-                <p><strong>Watering:</strong> <span id="crop-watering"></span></p>
-                
-                <div class="card-inset">
-                    <h3>Economics</h3>
-                    <p>Avg. Cost: RM <span id="crop-cost"></span></p>
-                    <p>Avg. Revenue: RM <span id="crop-revenue"></span></p>
-                    <p>Profit Margin: <span id="crop-profit"></span>%</p>
-                </div>
-                
-                <div class="card-inset">
-                    <h3>Common Diseases</h3>
-                    <ul id="crop-diseases"></ul>
+    <main class="dashboard-container">
+
+        <section class="card alert-card">
+            <strong>CRITICAL ALERT:</strong> Frost warning in effect tonight from 11:00 PM to 5:00 AM.
+        </section>
+
+        <section class="card current-weather">
+            <h2>Lokasi: Parit Raja</h2>
+            <div class="weather-main">
+                <div class="weather-icon">☀️</div>
+                <div class="weather-temp">
+                    31°C
+                    <span>Feels like 34°C</span>
                 </div>
             </div>
-        </div>
-    </template>
-    
-    <script src="../js/main.js"></script>
+            <div class="weather-details">
+                <div class="detail-item">
+                    <strong>Precipitation:</strong> 10%
+                </div>
+                <div class="detail-item">
+                    <strong>Humidity:</strong> 72%
+                </div>
+                <div class="detail-item">
+                    <strong>Wind:</strong> 8 km/h
+                </div>
+            </div>
+        </section>
+
+        <section class="card farm-map">
+            <h3>Farm Zone Overview</h3>
+            <div class="map-placeholder">
+                [Map Interface Placeholder]
+            </div>
+        </section>
+
+        <section class="card soil-data">
+            <h3>Sensor Data</h3>
+            <p><strong>Soil Moisture (Zone A):</strong> <span class="data-good">Optimal</span></p>
+            <p><strong>Soil Moisture (Zone B):</strong> <span class="data-warn">Low</span></p>
+            <p><strong>Soil Temp:</strong> 28°C</p>
+        </section>
+
+        <section class="card crop-advisory">
+            <h3>Crop Advisory</h3>
+            <p><strong>Recommendation:</strong> Low soil moisture in Zone B. Consider irrigation in the next 4 hours before heat increases.</p>
+        </section>
+
+        <section class="card hourly-forecast">
+            <h3>Hourly Forecast</h3>
+            <div class="scroll-container">
+                <div class="hour-item">
+                    <span class="time">Now</span>
+                    <span class="icon">☀️</span>
+                    <span class="temp">31°</span>
+                </div>
+                <div class="hour-item">
+                    <span class="time">4 PM</span>
+                    <span class="icon">☀️</span>
+                    <span class="temp">30°</span>
+                </div>
+                <div class="hour-item">
+                    <span class="time">5 PM</span>
+                    <span class="icon">⛅️</span>
+                    <span class="temp">29°</span>
+                </div>
+                <div class="hour-item">
+                    <span class="time">6 PM</span>
+                    <span class="icon">⛅️</span>
+                    <span class="temp">28°</span>
+                </div>
+                <div class="hour-item">
+                    <span class="time">7 PM</span>
+                    <span class="icon">☁️</span>
+                    <span class="temp">27°</span>
+                </div>
+                <div class="hour-item">
+                    <span class="time">8 PM</span>
+                    <span class="icon">🌧️</span>
+                    <span class="temp">26°</span>
+                </div>
+                <div class="hour-item">
+                    <span class="time">9 PM</span>
+                    <span class="icon">🌧️</span>
+                    <span class="temp">26°</span>
+                </div>
+                <div class="hour-item">
+                    <span class="time">10 PM</span>
+                    <span class="icon">🌙</span>
+                    <span class="temp">25°</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="card extended-forecast">
+            <h3>7-Day Forecast</h3>
+            <div class="day-item">
+                <span class="day">Today</span>
+                <span class="icon">☀️</span>
+                <span class="condition">Risk of evening shower</span>
+                <span class="temp-range">31° / 24°</span>
+            </div>
+            <div class="day-item">
+                <span class="day">Tue</span>
+                <span class="icon">🌧️</span>
+                <span class="condition">Thunderstorms</span>
+                <span class="temp-range">29° / 24°</span>
+            </div>
+            <div class="day-item">
+                <span class="day">Wed</span>
+                <span class="icon">🌧️</span>
+                <span class="condition">Showers</span>
+                <span class="temp-range">30° / 25°</span>
+            </div>
+            <div class="day-item">
+                <span class="day">Thu</span>
+                <span class="icon">⛅️</span>
+                <span class="condition">Partly Cloudy</span>
+                <span class="temp-range">32° / 25°</span>
+            </div>
+            <div class="day-item">
+                <span class="day">Fri</span>
+                <span class="icon">☀️</span>
+                <span class="condition">Sunny</span>
+                <span class="temp-range">33° / 26°</span>
+            </div>
+        </section>
+
+    </main>
+
 </body>
 </html>

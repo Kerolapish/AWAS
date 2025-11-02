@@ -1,6 +1,7 @@
 <?php
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
+ob_start(); // Start output buffering
 
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
@@ -37,6 +38,7 @@ try {
     
     // Forward the response directly to the client
     echo $response;
+    ob_end_flush(); // Flush the output buffer
 
 } catch (Exception $e) {
     http_response_code(500);

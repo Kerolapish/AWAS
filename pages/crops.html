@@ -3,65 +3,114 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Crops - AWAS</title>
+    <title>Crop Management - AWAS</title>
     <link rel="stylesheet" href="../css/style.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="../css/crop.css">
 </head>
 <body>
-    <div class="app-container">
-        <header class="app-header">
-            <h1 id="page-title">Crops Knowledge</h1>
-            <a href="#" id="logout-btn" class="logout-btn">Logout</a>
-        </header>
-        
-        <main id="app-content" class="app-content">
-            <div class="page-content" id="crop-list">
-                <!-- Crops will be loaded here dynamically -->
-            </div>
-        </main>
-        
-        <nav class="app-nav">
-            <button class="nav-btn" data-page="weather">
-                <span>Weather</span>
-            </button>
-            <button class="nav-btn" data-page="reminders">
-                <span>Reminders</span>
-            </button>
-            <button class="nav-btn" data-page="ledger">
-                <span>Ledger</span>
-            </button>
-            <button class="nav-btn active" data-page="crops">
-                <span>Crops</span>
-            </button>
+
+    <header>
+        <h1>Agricultural Weather Alert System (AWAS)</h1>
+        <nav class="main-nav">
+            <a href="index.html" class="nav-button">Weather</a>
+            <a href="crop.html" class="nav-button active">Crop</a>
+            <a href="ledger.html" class="nav-button">Ledger</a>
         </nav>
-    </div>
+    </header>
 
-    <template id="template-crop-detail">
-        <div class="page-content">
-            <button class="btn-back" data-page="crops">&larr; Back to Crops</button>
-            <div class="crop-detail-card">
-                <img id="crop-image" src="" alt="Crop Image" class="crop-detail-image">
-                <h2 id="crop-name"></h2>
-                <p><strong>Best Season:</strong> <span id="crop-season"></span></p>
-                <p><strong>Watering:</strong> <span id="crop-watering"></span></p>
-                
-                <div class="card-inset">
-                    <h3>Economics</h3>
-                    <p>Avg. Cost: RM <span id="crop-cost"></span></p>
-                    <p>Avg. Revenue: RM <span id="crop-revenue"></span></p>
-                    <p>Profit Margin: <span id="crop-profit"></span>%</p>
-                </div>
-                
-                <div class="card-inset">
-                    <h3>Common Diseases</h3>
-                    <ul id="crop-diseases"></ul>
-                </div>
-            </div>
+    <main class="crop-page-container">
+        
+        <div class="crop-header">
+            <h2>Your Crops</h2>
+            <button class="add-new-button">+ Add New Crop</button>
         </div>
-    </template>
 
-    <script src="../js/main.js"></script>
+        <div class="crop-grid">
+
+            <article class="crop-card">
+                <div class="card-img-placeholder">
+                    <span>[Crop Image]</span>
+                </div>
+                <div class="card-content">
+                    <h3>Chili Padi - Field A</h3>
+                    <span class="status-badge status-good">Good</span>
+                    
+                    <div class="card-stats">
+                        <div class="stat-item">
+                            <span class="stat-number" id="crop-a-age">[45]</span>
+                            <span class="stat-label">Days Old</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number" id="crop-a-health">[98]%</span>
+                            <span class="stat-label">Health</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number" id="crop-a-moisture">[65]%</span>
+                            <span class="stat-label">Soil Moisture</span>
+                        </div>
+                    </div>
+                    
+                    <a href="#" class="btn-manage">Manage</a>
+                </div>
+            </article>
+
+            <article class="crop-card">
+                <div class="card-img-placeholder">
+                    <span>[Crop Image]</span>
+                </div>
+                <div class="card-content">
+                    <h3>Corn - Field B</h3>
+                    <span class="status-badge status-warn">Warning</span>
+                    
+                    <div class="card-stats">
+                        <div class="stat-item">
+                            <span class="stat-number" id="crop-b-age">[70]</span>
+                            <span class="stat-label">Days Old</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number" id="crop-b-health">[85]%</span>
+                            <span class="stat-label">Health</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number" id="crop-b-moisture">[35]%</span>
+                            <span class="stat-label">Soil Moisture</span>
+                        </div>
+                    </div>
+                    
+                    <a href="#" class="btn-manage">Manage</a>
+                </div>
+            </article>
+
+            <article class="crop-card">
+                <div class="card-img-placeholder">
+                    <span>[Crop Image]</span>
+                </div>
+                <div class="card-content">
+                    <h3>Lettuce - Greenhouse 1</h3>
+                    <span class="status-badge status-good">Good</span>
+                    
+                    <div class="card-stats">
+                        <div class="stat-item">
+                            <span class="stat-number" id="crop-c-age">[20]</span>
+                            <span class="stat-label">Days Old</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number" id="crop-c-health">[99]%</span>
+                            <span class="stat-label">Health</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number" id="crop-c-moisture">[75]%</span>
+                            <span class="stat-label">Soil Moisture</span>
+                        </div>
+                    </div>
+                    
+                    <a href="#" class="btn-manage">Manage</a>
+                </div>
+            </article>
+            
+            </div>
+    </main>
+
 </body>
 </html>

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Details - AWAS</title>
+    <link rel="stylesheet" href="../css/style.css">
+    
+    <link rel="stylesheet" href="../css/weather.css">
+</head>
+<body>
+
+    <header>
+        <h1>Agricultural Weather Alert System (AWAS)</h1>
+        <nav class="main-nav">
+            <a href="index.html" class="nav-button active">Weather</a>
+            <a href="crop.html" class="nav-button">Crop</a>
+            <a href="ledger.html" class="nav-button">Ledger</a>
+        </nav>
+    </header>
+
+    <main class="weather-container">
+
+        <div class="forecast-column">
+            
+            <section class="card">
+                <h3>Hourly Forecast</h3>
+                <div class="table-responsive">
+                    <table class="forecast-table">
+                        <tbody id="hourly-forecast-body">
+                            <tr>
+                                <td>Now</td>
+                                <td><span class="icon">☀️</span> 31°</td>
+                                <td>10%</td>
+                                <td>8 km/h</td>
+                            </tr>
+                            <tr>
+                                <td>4:00 PM</td>
+                                <td><span class="icon">☀️</span> 30°</td>
+                                <td>5%</td>
+                                <td>10 km/h</td>
+                            </tr>
+                            <tr>
+                                <td>5:00 PM</td>
+                                <td><span class="icon">⛅️</span> 29°</td>
+                                <td>15%</td>
+                                <td>12 km/h</td>
+                            </tr>
+                            </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="card">
+                <h3>7-Day Forecast</h3>
+                <div class="table-responsive">
+                    <table class="forecast-table">
+                        <tbody id="daily-forecast-body">
+                            <tr>
+                                <td>Today</td>
+                                <td><span class="icon">☀️</span> Partly Cloudy</td>
+                                <td>31° / 24°</td>
+                                <td>20%</td>
+                            </tr>
+                            <tr>
+                                <td>Tuesday</td>
+                                <td><span class="icon">🌧️</span> Thunderstorms</td>
+                                <td>29° / 24°</td>
+                                <td>80%</td>
+                            </tr>
+                            <tr>
+                                <td>Wednesday</td>
+                                <td><span class="icon">🌧️</span> Showers</td>
+                                <td>30° / 25°</td>
+                                <td>60%</td>
+                            </tr>
+                            </tbody>
+                    </table>
+                </div>
+            </section>
+
+        </div>
+
+        <div class="details-column">
+            
+            <section class="card">
+                <h3>Current Weather: <span id="current-location">[Location]</span></h3>
+                <div class="current-main">
+                    <span id="current-icon" class="icon">[☀️]</span>
+                    <span id="current-temp" class="temp">[31]°C</span>
+                    <span id="current-desc">[Partly Cloudy]</span>
+                </div>
+                <div class="current-details-grid">
+                    <div>
+                        <small>Feels Like</small>
+                        <strong id="current-feelslike">[34]°</strong>
+                    </div>
+                    <div>
+                        <small>Wind</small>
+                        <strong id="current-wind">[8] km/h</strong>
+                    </div>
+                    <div>
+                        <small>Humidity</small>
+                        <strong id="current-humidity">[72]%</strong>
+                    </div>
+                    <div>
+                        <small>UV Index</small>
+                        <strong id="current-uv">[9] of 11</strong>
+                    </div>
+                    <div>
+                        <small>Pressure</small>
+                        <strong id="current-pressure">[1012] hPa</strong>
+                    </div>
+                    <div>
+                        <small>Visibility</small>
+                        <strong id="current-visibility">[10] km</strong>
+                    </div>
+                </div>
+            </section>
+
+            <section class="card">
+                <h3>Agri-Details</h3>
+                <div class="current-details-grid">
+                    <div>
+                        <small>Sunrise</small>
+                        <strong id="detail-sunrise">[7:01 AM]</strong>
+                    </div>
+                    <div>
+                        <small>Sunset</small>
+                        <strong id="detail-sunset">[7:15 PM]</strong>
+                    </div>
+                    <div>
+                        <small>Moon Phase</small>
+                        <strong id="detail-moon">[Waning Gibbous]</strong>
+                    </div>
+                    <div>
+                        <small>Spraying</small>
+                        <strong id="detail-spraying" class="data-warn">[Not Ideal]</strong>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+    </main>
+
+</body>
+</html>

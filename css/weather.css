@@ -1,0 +1,103 @@
+/* --- Weather Page Layout --- */
+.weather-container {
+    display: flex;
+    flex-wrap: wrap; /* Allows columns to stack on mobile */
+    gap: 20px;
+    padding: 20px;
+}
+
+/* Main column for tables */
+.forecast-column {
+    flex: 3; /* Takes up 3/4 of the space */
+    min-width: 300px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* Sidebar for current details */
+.details-column {
+    flex: 1; /* Takes up 1/4 of the space */
+    min-width: 280px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* --- Current Conditions Card --- */
+.current-main {
+    text-align: center;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #f0f0f0;
+    padding-bottom: 20px;
+}
+.current-main .icon {
+    font-size: 60px;
+    line-height: 1;
+    display: block;
+}
+.current-main .temp {
+    font-size: 42px;
+    font-weight: 600;
+    margin: 5px 0;
+    display: block;
+}
+.current-main .desc {
+    font-size: 1.1rem;
+    color: #555;
+    display: block;
+}
+
+.current-details-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+.current-details-grid div {
+    background-color: #f9f9f9;
+    padding: 10px;
+    border-radius: 6px;
+}
+.current-details-grid small {
+    display: block;
+    font-size: 0.85rem;
+    color: #666;
+    margin-bottom: 4px;
+}
+.current-details-grid strong {
+    font-size: 1.1rem;
+}
+.data-warn {
+    color: #ffc107;
+    font-weight: bold;
+}
+
+/* --- Forecast Table Styles --- */
+.table-responsive {
+    width: 100%;
+    overflow-x: auto; /* Allows table to scroll horizontally on small screens */
+}
+.forecast-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.forecast-table tr {
+    border-bottom: 1px solid #f0f0f0;
+}
+.forecast-table tr:last-child {
+    border-bottom: none;
+}
+.forecast-table td {
+    padding: 12px 10px;
+    vertical-align: middle;
+    font-size: 0.95rem;
+}
+.forecast-table td:first-child {
+    font-weight: 600;
+    width: 120px; /* Give day/time a fixed width */
+}
+.forecast-table .icon {
+    font-size: 1.5rem;
+    margin-right: 8px;
+    vertical-align: middle;
+}

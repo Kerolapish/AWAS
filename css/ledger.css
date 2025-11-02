@@ -1,0 +1,147 @@
+/* --- Ledger Page Layout --- */
+.ledger-container {
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* --- Summary Dashboard --- */
+.ledger-summary {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.summary-card {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.summary-card h3 {
+    font-size: 1rem;
+    color: #666;
+    margin: 0 0 5px 0;
+    text-transform: uppercase;
+}
+
+.summary-card .amount {
+    font-size: 2.25rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+/* Accountant Colors: Green for profit, Red for loss */
+.profit-positive {
+    color: #28a745;
+}
+.profit-negative {
+    color: #d9534f;
+}
+
+/* --- Ledger Controls --- */
+.ledger-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap; /* For mobile */
+    gap: 15px;
+    margin-bottom: 20px;
+}
+.control-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.control-group label {
+    font-weight: 600;
+}
+.control-group select,
+#crop-select {
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 1rem;
+}
+.btn-primary {
+    background-color: #007bff; /* Blue for "add" */
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+.btn-primary:hover {
+    background-color: #0056b3;
+}
+
+/* --- Transaction Table --- */
+.table-responsive {
+    width: 100%;
+    overflow-x: auto;
+}
+.ledger-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.ledger-table th,
+.ledger-table td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #f0f0f0;
+}
+.ledger-table th {
+    background-color: #f9f9f9;
+    font-size: 0.9rem;
+    color: #555;
+    text-transform: uppercase;
+}
+.ledger-table tr:last-child td {
+    border-bottom: none;
+}
+.text-right {
+    text-align: right;
+}
+
+/* Category Badges */
+.category-badge {
+    padding: 3px 8px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    border-radius: 12px;
+}
+.category-expense {
+    background-color: #fff3cd; /* Light yellow */
+    color: #856404;
+}
+.category-revenue {
+    background-color: #d4edda; /* Light green */
+    color: #155724;
+}
+
+/* Amount Colors */
+.amount-revenue {
+    color: #28a745;
+    font-weight: 600;
+}
+.amount-expense {
+    color: #d9534f;
+    font-weight: 600;
+}
+
+/* --- Responsive (Mobile) --- */
+@media (max-width: 768px) {
+    .ledger-summary {
+        grid-template-columns: 1fr; /* Stack summary cards */
+    }
+    .ledger-controls {
+        flex-direction: column;
+        align-items: stretch; /* Make controls full-width */
+    }
+    .control-group select {
+        width: 100%;
+    }
+}

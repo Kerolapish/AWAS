@@ -1,10 +1,12 @@
 document.addEventListener('DOMContentLoaded', () => {
+    /*
     const fetchWeatherBtn = document.getElementById('fetch-weather-btn');
     const weatherOutput = document.getElementById('weather-output');
 
     const getWeatherData = async (latitude, longitude) => {
         try {
-            const response = await fetch(`http://localhost/AWAS/api/weather.php?lat=${latitude}&lon=${longitude}`);
+            // Using the full URL is more robust
+            const response = await fetch(`http://localhost/AWAS/api/api.php?action=get_weather&lat=${latitude}&lon=${longitude}`);
             if (!response.ok) {
                 throw new Error('Weather service not available');
             }
@@ -68,11 +70,21 @@ document.addEventListener('DOMContentLoaded', () => {
             displayWeather(weather);
             
         } catch (err) {
+            let errorMessage = 'Could not fetch weather data. Please try again later.';
+            if (err.name === 'TypeError' && err.message.includes('Failed to fetch')) {
+                // Provide a more specific error message with a direct link to test the API
+                const testApiUrl = `http://localhost/AWAS/api/api.php?action=get_weather&lat=51.5&lon=-0.12`;
+                errorMessage = `Failed to connect to the API. Please ensure your server is running and accessible. 
+                                <br><br>
+                                You can test the API directly: 
+                                <a href="${testApiUrl}" target="_blank">Test Weather API</a>`;
+            } else if (err.message === 'User denied Geolocation') {
+                errorMessage = 'Please enable location access to see weather information.';
+            }
+
             weatherOutput.innerHTML = `
                 <div class="error-message">
-                    ${err.message === 'User denied Geolocation' 
-                        ? 'Please enable location access to see weather information.'
-                        : 'Could not fetch weather data. Please try again later.'}
+                    ${errorMessage}
                 </div>
             `;
         }
@@ -86,4 +98,5 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Auto-update weather every 5 minutes
     setInterval(updateWeather, 300000);
+    */
 });

@@ -37,6 +37,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // --- Global State ---
     const pageTitles = {
         weather: "Weather Alerts",
+        weather: "Weather Forecast",
         reminders: "Reminders",
         ledger: "Ledger",
         crops: "Crops Knowledge",
@@ -47,6 +48,7 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
             const position = await new Promise((resolve, reject) => {
                 navigator.geolocation.getCurrentPosition(resolve, reject);
+                navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 });
             });
             const { latitude, longitude } = position.coords;
             return await api('get_weather', { params: { lat: latitude, lon: longitude } });
@@ -115,7 +117,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const api = async (action, options = {}) => {
         const { method = 'GET', body = null, params = {} } = options;
         
-        let url = `api/api.php?action=${action}`;
+        // Use a root-relative path to ensure it works from any page depth
+        let url = `/AWAS/api/api.php?action=${action}`;
         if (method === 'GET' && Object.keys(params).length > 0) {
             url += '&' + new URLSearchParams(params).toString();
         }
@@ -140,6 +143,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 return null;
             }
             if (!result.success) {
+            if (result.success === false) { // Handle API-level errors
                 throw new Error(result.message);
             }
             return result;
@@ -211,9 +215,13 @@ document.addEventListener("DOMContentLoaded", () => {
         
     const fetchBtn = page.querySelector('#fetch-weather-btn');
     if (fetchBtn) fetchBtn.onclick = loadWeather;
+        const fetchBtn = page.querySelector('#fetch-weather-btn');
+        if (fetchBtn) fetchBtn.onclick = loadWeather; // Re-fetch when button is clicked
+
         appContent.innerHTML = '';
         appContent.appendChild(page);
 
+        output.innerHTML = '<div class="loading-spinner"></div>'; // Show loading inside the output
         try {
             const weatherData = await fetchWeatherData();
             if (weatherData) {
@@ -370,110 +378,4 @@ document.addEventListener("DOMContentLoaded", () => {
             item.querySelector('.delete-btn').onclick = async (e) => {
                 const id = e.target.closest('.delete-btn').dataset.id;
                 if (confirm('Delete this entry?')) {
-                    await api('delete_ledger', { params: { id } });
-                    loadLedger(); // Refresh
-                }
-            };
-            listEl.appendChild(item);
-        });
-    };
-    
-    // 4. CROPS
-    const loadCrops = async () => {
-        showLoading();
-        const page = cloneTemplate('template-crops');
-        const listEl = page.getElementById('crop-list');
-        
-        appContent.innerHTML = '';
-        appContent.appendChild(page);
-
-        const result = await api('get_crops');
-        if (!result) return;
-        
-        if (result.crops.length === 0) {
-            listEl.innerHTML = '<p style="text-align:center; color: var(--text-light);">No crop data found.</p>';
-            return;
-        }
-        
-        listEl.innerHTML = '';
-        result.crops.forEach(crop => {
-            const item = document.createElement('div');
-            item.className = 'crop-item-card';
-            item.dataset.id = crop.id;
-            item.innerHTML = `
-                <img src="${escapeHTML(crop.image || '')}" alt="${escapeHTML(crop.name)}" onerror="this.style.display='none'">
-                <div style="flex: 1;">
-                    <p style="margin:0; font-weight: 600;">${escapeHTML(crop.name)}</p>
-                    <span style="font-size: 14px; color: var(--text-light);">${escapeHTML(crop.bestSeason)}</span>
-                </div>
-                <span>&rarr;</span>
-            `;
-            item.onclick = () => loadCropDetail(crop.id);
-            listEl.appendChild(item);
-        });
-    };
-    
-    const loadCropDetail = async (id) => {
-        showLoading();
-        const result = await api('get_crop_detail', { params: { id } });
-        if (!result) return;
-        
-        const crop = result.crop;
-    const page = cloneTemplate('template-crop-detail');
-
-    const backBtn = page.querySelector('.btn-back');
-    if (backBtn) backBtn.onclick = () => navigateTo('crops');
-    const imgEl = page.querySelector('#crop-image'); if (imgEl) imgEl.src = crop.image || '';
-    const nameEl = page.querySelector('#crop-name'); if (nameEl) nameEl.textContent = crop.name;
-    const seasonEl = page.querySelector('#crop-season'); if (seasonEl) seasonEl.textContent = crop.bestSeason;
-    const wateringEl = page.querySelector('#crop-watering'); if (wateringEl) wateringEl.textContent = crop.watering;
-    const costEl = page.querySelector('#crop-cost'); if (costEl) costEl.textContent = parseFloat(crop.avgCost).toFixed(2);
-    const revenueEl = page.querySelector('#crop-revenue'); if (revenueEl) revenueEl.textContent = parseFloat(crop.avgRevenue).toFixed(2);
-    const profitEl = page.querySelector('#crop-profit'); if (profitEl) profitEl.textContent = parseFloat(crop.profitMargin).toFixed(1);
-
-    const diseasesList = page.querySelector('#crop-diseases');
-        diseasesList.innerHTML = '';
-        // Assuming diseases are stored as comma-separated string
-        const diseases = crop.diseases ? crop.diseases.split(',') : [];
-        if (diseases.length > 0) {
-            diseases.forEach(d => {
-                const li = document.createElement('li');
-                li.textContent = escapeHTML(d.trim());
-                diseasesList.appendChild(li);
-            });
-        } else {
-            diseasesList.innerHTML = '<li>No common diseases listed.</li>';
-        }
-        
-        appContent.innerHTML = '';
-        appContent.appendChild(page);
-    };
-    
-    // --- INIT ---
-    // Authentication is disabled; initialize app directly.
-    const initApp = async () => {
-        navigateTo('weather'); // Start on weather page
-
-        // Set up periodic checks
-        setInterval(checkReminders, 60000); // Check reminders every minute
-
-        // Initial reminder check
-        checkReminders();
-
-        // Wire nav buttons safely
-        navButtons.forEach(btn => {
-            btn.onclick = () => navigateTo(btn.dataset.page);
-        });
-
-        if (logoutBtn) {
-            logoutBtn.onclick = async (e) => {
-                e.preventDefault();
-                if (weatherUpdateInterval) clearInterval(weatherUpdateInterval);
-                try { await api('logout'); } catch (e) { /* ignore */ }
-                window.location.href = 'login.html';
-            };
-        }
-    };
-
-    initApp();
-});
+                    await api('delete_ledger', { par
