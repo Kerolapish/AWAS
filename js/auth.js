@@ -1,114 +1,87 @@
-// Authentication functionality is currently disabled
-/* 
-All authentication code has been commented out as part of transitioning to a weather-only functionality.
-This file is kept for reference but is not actively used.
+// js/auth.js
+document.addEventListener("DOMContentLoaded", () => {
+    const authForm = document.getElementById("auth-form");
+    const errorMessage = document.getElementById("error-message");
 
-document.addEventListener('DOMContentLoaded', () => {
-    const form = document.getElementById('auth-form');
-    const errorMessage = document.getElementById('error-message');
+    if (authForm) {
+        authForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            errorMessage.textContent = ""; // Clear previous errors
 
-    const handleServerResponse = async (response) => {
-        // First check if the response is OK
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error('Server error response:', errorText);
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        // Get the response content type
-        const contentType = response.headers.get("content-type");
-        if (!contentType || !contentType.includes("application/json")) {
-            const text = await response.text();
-            console.error('Non-JSON response:', text);
-            throw new TypeError("Server didn't return JSON");
-        }
-
-        return await response.json();
-    };
-
-    form.onsubmit = async (e) => {
-        e.preventDefault();
-        
-        // Get form data
-        const formData = {
-            email: form.email.value,
-            password: form.password.value
-        };
-
-        // Add additional fields for registration
-        if (form.fullName) {
-            formData.fullName = form.fullName.value;
-        }
-        if (form.phone) {
-            formData.phone = form.phone.value;
-        }
-
-        try {
-            // Determine if this is login or register based on the form fields
-            const action = form.fullName ? 'register' : 'login';
+            // Determine the API action based on the HTML file name
+            const path = window.location.pathname;
+            const page = path.substring(path.lastIndexOf('/') + 1);
             
-            console.log('Sending request to server...', {
-                action,
-                formData,
-                url: `../api/api.php?action=${action}`
-            });
-            
-            const response = await fetch(`http://localhost/AWAS/api/api.php?action=${action}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                },
-                credentials: 'include',
-                body: JSON.stringify(formData)
-            });
-            
-            // Log the raw response for debugging
-            // First check if the response is OK
-            if (!response.ok) {
-                const errorText = await response.text();
-                console.error('Server error:', errorText);
-                throw new Error(`HTTP error! status: ${response.status}`);
+            let action = "";
+            if (page === 'login.html') action = 'login';
+            if (page === 'register.html') action = 'register';
+            if (page === 'forgot_password.html') action = 'forgot_password';
+
+            if (!action) {
+                errorMessage.textContent = "Error: Could not determine auth action.";
+                return;
             }
 
-            // Get the response content type
-            const contentType = response.headers.get("content-type");
-            if (!contentType || !contentType.includes("application/json")) {
-                const text = await response.text();
-                console.error('Non-JSON response:', text);
-                throw new TypeError("Server didn't return JSON");
-            }
+            // Collect form data
+            const formData = new FormData(authForm);
+            const data = Object.fromEntries(formData.entries());
 
-            const result = await response.json();
-            
-            const data = await handleServerResponse(response);
-            console.log('Server response:', data);
-
-            if (result.success) {
-                console.log('Login successful, redirecting...');
-                // Store user info in localStorage if needed
-                if (result.user) {
-                    localStorage.setItem('user', JSON.stringify(result.user));
-                }
-                // Redirect to dashboard
-                window.location.href = 'index.html';
-            } else {
-                console.error('Login failed:', result);
-                errorMessage.textContent = result.message || 'An error occurred';
-            }
-        } catch (err) {
-            console.error('Connection error:', err);
-            errorMessage.textContent = `Server connection error: ${err.message}`;
-            
-            // Try to fetch error details
+            let response; // Define response here to access it in catch
             try {
-                const errorResponse = await fetch('../api/api.php');
-                const errorText = await errorResponse.text();
-                console.log('PHP Response:', errorText);
-            } catch (e) {
-                console.error('Could not fetch error details:', e);
+                response = await fetch('../api/api.php?action=' + action, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                if (!response.ok) {
+                    // Handle HTTP errors like 404 (Not Found) or 500 (Server Error)
+                    throw new Error(`Server error: ${response.status} ${response.statusText}`);
+                }
+
+                // Try to parse as JSON
+                const result = await response.json();
+
+                if (result.success) {
+                    if (action === 'login') {
+                        // On successful login, go to the main app
+                        window.location.href = 'index.html';
+                    } else if (action === 'register') {
+                        // On successful register, go to the login page
+                        alert('Registration successful! Please login.');
+                        window.location.href = 'login.html';
+                    } else if (action === 'forgot_password') {
+                        // On forgot password, just show the message
+                        authForm.innerHTML = `<p style="text-align: center;">${result.message}</p><p class="auth-switch">Back to <a href="login.html">Login</a></p>`;
+                    }
+                } else {
+                    // This is for API-level errors (e.g., "Invalid password", "Duplicate email")
+                    errorMessage.textContent = result.message;
+                }
+
+            } catch (err) {
+                // This block runs if fetch fails, response.ok is false, or response.json() fails
+                
+                console.error("Auth Error:", err); // Log the full error
+                
+                if (err instanceof SyntaxError) {
+                    // This likely means response.json() failed because PHP sent text/HTML
+                    errorMessage.innerHTML = "<b>Server Error:</b> Received invalid response. <br/> See browser console (F12) for details.";
+                    // Attempt to read the raw text response to show the user
+                    if (response) {
+                        const rawText = await response.text();
+                        console.error("Server returned non-JSON response:", rawText);
+                    }
+                } else if (err.message.startsWith('Server error:')) {
+                    // This is our custom error from !response.ok (e.g., "Server error: 404 Not Found")
+                    errorMessage.textContent = err.message;
+                } else {
+                    // This could be a network fetch error (e.g., server is down)
+                    errorMessage.textContent = `Network error. Please try again.`;
+                }
             }
-        }
-    };
+        });
+    }
 });
-*/

@@ -5,14 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Crop Ledger - AWAS</title>
     <link rel="stylesheet" href="../css/style.css">
-    <link rel="stylesheet" href="../css/ledger.css">
-</head>
+    <link rel="stylesheet" href="../css/ledger.css"> </head>
 <body>
 
     <header>
         <h1>Agricultural Weather Alert System (AWAS)</h1>
         <nav class="main-nav">
-            <a href="./index.html" class="nav-button">Weather</a>
+            <a href="./index.html" class="nav-button active">Index</a>
+            <a href="./weather.html" class="nav-button">Weather</a>
             <a href="./crops.html" class="nav-button">Crop</a>
             <a href="./ledger.html" class="nav-button active">Ledger</a>
         </nav>
@@ -59,7 +59,7 @@
                             <th>Description (Crop)</th>
                             <th>Category</th>
                             <th class="text-right">Amount</th>
-                        </tr>
+                            <th>Action</th> </tr>
                     </thead>
                     <tbody id="transaction-body">
                         </tbody>
@@ -69,47 +69,49 @@
     </main>
 
     <script>
-        // Wait for the page to load
         document.addEventListener('DOMContentLoaded', function() {
-            // Add listener to the dropdown
             const cropSelect = document.getElementById('crop-select');
             cropSelect.addEventListener('change', filterAndCalculate);
-            
-            // --- NEW ---
-            // 1. Load data from the database
             loadLedgerData();
         });
 
         /**
-         * --- NEW FUNCTION ---
-         * Fetches data from the PHP script and builds the table.
+         * Fetches data from the API and builds the table
          */
         function loadLedgerData() {
             const tableBody = document.getElementById('transaction-body');
-            tableBody.innerHTML = '<tr><td colspan="4">Loading data...</td></tr>'; // Show loading message
+            tableBody.innerHTML = '<tr><td colspan="5">Loading data...</td></tr>';
 
-            fetch('get-ledger.php')
+            // --- FIX 1: Correct API Path and Action ---
+            // This now calls your real api.php file
+            fetch('../api/api.php?action=get_ledger')
                 .then(response => response.json())
                 .then(data => {
                     tableBody.innerHTML = ''; // Clear loading message
 
-                    if (data.error) {
-                        tableBody.innerHTML = `<tr><td colspan="4">Error: ${data.error}</td></tr>`;
+                    // --- FIX 2: Check for API success and auth ---
+                    // This matches the JSON response from your api.php file
+                    if (!data.success) {
+                        tableBody.innerHTML = `<tr><td colspan="5">Error: ${data.message}</td></tr>`;
+                        if (data.auth === false) {
+                            // If not logged in, redirect to login page
+                            window.location.href = 'login.html';
+                        }
                         return;
                     }
 
-                    if (data.length === 0) {
-                        tableBody.innerHTML = '<tr><td colspan="4">No transactions found.</td></tr>';
+                    // --- FIX 3: Use the 'entries' array from your API ---
+                    // This matches the JSON response from your api.php file
+                    if (data.entries.length === 0) {
+                        tableBody.innerHTML = '<tr><td colspan="5">No transactions found.</td></tr>';
                     }
 
-                    // Loop through each row of data from the database
-                    data.forEach(row => {
+                    data.entries.forEach(row => {
                         let amount = 0;
                         let categoryClass = '';
                         let amountClass = '';
                         let categoryText = '';
 
-                        // Check if it's revenue or cost
                         if (parseFloat(row.revenue) > 0) {
                             amount = parseFloat(row.revenue);
                             categoryClass = 'category-revenue';
@@ -122,44 +124,67 @@
                             categoryText = 'Expense';
                         }
                         
-                        // This matches the crop name from the DB (e.g., "Chili Padi")
                         let cropName = row.crop;
 
-                        // Create the new table row HTML
                         const newRow = `
                             <tr data-crop="${cropName}">
                                 <td>${row.date}</td>
                                 <td>${cropName}</td>
                                 <td><span class="category-badge ${categoryClass}">${categoryText}</span></td>
                                 <td class="${amountClass} text-right">RM ${amount.toFixed(2)}</td>
+                                <td>
+                                    <button class="delete-btn" data-id="${row.id}">&times;</button>
+                                </td>
                             </tr>
                         `;
-                        
-                        // Add the new row to the table
                         tableBody.innerHTML += newRow;
                     });
 
-                    // 2. After building the table, run the calculation
+                    // --- NEW: Add click events to all delete buttons ---
+                    document.querySelectorAll('.delete-btn').forEach(button => {
+                        button.addEventListener('click', deleteEntry);
+                    });
+
+                    // After building the table, run the calculation
                     filterAndCalculate();
                 })
                 .catch(error => {
                     console.error('Fetch Error:', error);
-                    tableBody.innerHTML = '<tr><td colspan="4">Error loading data.</td></tr>';
+                    // This is the error you are seeing
+                    tableBody.innerHTML = '<tr><td colspan="5">Server or network error. Is XAMPP running?</td></tr>';
                 });
         }
 
         /**
-         * This function is the same as before.
-         * It filters the table and runs the calculation.
+         * --- NEW FUNCTION: Deletes an entry ---
+         */
+        function deleteEntry(event) {
+            const id = event.target.dataset.id;
+            if (confirm('Are you sure you want to delete this entry?')) {
+                // Call the 'delete_ledger' action in your api.php
+                fetch(`../api/api.php?action=delete_ledger&id=${id}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            loadLedgerData(); // Reload the whole list and calculations
+                        } else {
+                            alert('Error: ' + data.message);
+                        }
+                    })
+                    .catch(error => alert('Network error. Could not delete.'));
+            }
+        }
+
+        /**
+         * Filters the table and runs the calculation.
          */
         function filterAndCalculate() {
-            // 1. FILTER THE TABLE
             const selectedCrop = document.getElementById('crop-select').value;
             const rows = document.querySelectorAll('#transaction-body tr');
 
             rows.forEach(row => {
                 const rowCrop = row.dataset.crop;
-                if (rowCrop) { // Check if row has data-crop attribute
+                if (rowCrop) {
                     if (selectedCrop === 'all' || rowCrop === selectedCrop) {
                         row.style.display = '';
                     } else {
@@ -167,14 +192,11 @@
                     }
                 }
             });
-
-            // 2. RUN THE CALCULATION (only on visible rows)
             calculateLedger();
         }
 
         /**
-         * This function is also the same as before.
-         * It calculates the totals for the visible summary cards.
+         * Calculates the totals for the visible summary cards.
          */
         function calculateLedger() {
             let totalRevenue = 0;
@@ -184,13 +206,10 @@
             rows.forEach(row => {
                 if (row.style.display !== 'none') {
                     const revenueCell = row.querySelector('.amount-revenue');
-                    if (revenueCell) {
-                        totalRevenue += parseAmount(revenueCell.textContent);
-                    }
+                    if (revenueCell) totalRevenue += parseAmount(revenueCell.textContent);
+                    
                     const expenseCell = row.querySelector('.amount-expense');
-                    if (expenseCell) {
-                        totalExpenses += parseAmount(expenseCell.textContent);
-                    }
+                    if (expenseCell) totalExpenses += parseAmount(expenseCell.textContent);
                 }
             });
 
@@ -202,14 +221,10 @@
             netProfitElement.textContent = formatCurrency(netProfit);
 
             netProfitElement.classList.remove('profit-positive', 'profit-negative');
-            if (netProfit >= 0) {
-                netProfitElement.classList.add('profit-positive');
-            } else {
-                netProfitElement.classList.add('profit-negative');
-            }
+            netProfitElement.classList.add(netProfit >= 0 ? 'profit-positive' : 'profit-negative');
         }
 
-        // Helper functions (same as before)
+        // Helper functions
         function parseAmount(text) {
             return parseFloat(text.replace('RM', '').replace(/,/g, '').trim()) || 0;
         }

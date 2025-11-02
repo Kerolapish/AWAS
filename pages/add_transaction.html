@@ -12,7 +12,8 @@
     <header>
         <h1>Agricultural Weather Alert System (AWAS)</h1>
         <nav class="main-nav">
-            <a href="./index.html" class="nav-button">Weather</a>
+            <a href="index.html" class="nav-button active">Index</a>
+            <a href="./weather.html" class="nav-button">Weather</a>
             <a href="./crops.html" class="nav-button">Crop</a>
             <a href="./weather.html" class="nav-button active">Ledger</a>
         </nav>
@@ -70,23 +71,35 @@
             formMessage.textContent = 'Saving...';
             formMessage.style.color = 'blue';
 
+            // Create a plain JavaScript object from the form data
             const formData = new FormData(transactionForm);
+            const type = formData.get('type');
+            const amount = parseFloat(formData.get('amount'));
+
+            // Prepare the data in the format your api.php expects
+            const dataToSend = {
+                crop: formData.get('crop'),
+                date: formData.get('date'),
+                revenue: type === 'revenue' ? amount : 0,
+                cost: type === 'expense' ? amount : 0
+            };
             
-            // Send the data to the PHP server file
-            fetch('../api/save_transaction.php', {
+            // Send the data to the correct api.php endpoint
+            fetch('../api/api.php?action=add_ledger', {
                 method: 'POST',
-                body: formData
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(dataToSend) // Send data as a JSON string
             })
             .then(response => response.json()) // Expect a JSON response from PHP
             .then(data => {
                 if (data.success) {
                     formMessage.textContent = 'Success! Redirecting...';
                     formMessage.style.color = 'green';
-                    setTimeout(() => {
-                        window.location.href = '../pages/ledger.html'; // Go back to the ledger
-                    }, 1500);
+                    setTimeout(() => window.location.href = './ledger.html', 1500);
                 } else {
-                    formMessage.textContent = 'Error: ' + data.error;
+                    formMessage.textContent = 'Error: ' + data.message;
                     formMessage.style.color = 'red';
                 }
             })

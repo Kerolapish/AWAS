@@ -1,127 +1,29 @@
 // main.js
 document.addEventListener("DOMContentLoaded", () => {
     const appContent = document.getElementById("app-content");
-    // Page title and nav/logout may not exist in the simplified, weather-only UI.
-    const pageTitleEl = document.getElementById("page-title");
-    const navButtons = document.querySelectorAll(".nav-btn") || [];
+    const pageTitle = document.getElementById("page-title");
+    const navButtons = document.querySelectorAll(".nav-btn");
     const logoutBtn = document.getElementById("logout-btn");
-    
-    // Notification System
-    const notificationSystem = {
-        container: null,
-        init() {
-            this.container = document.createElement('div');
-            this.container.className = 'notification-panel';
-            document.body.appendChild(this.container);
-        },
-        show(message, type = 'success', duration = 5000) {
-            const notification = document.createElement('div');
-            notification.className = `notification ${type}`;
-            notification.innerHTML = message;
-            this.container.appendChild(notification);
-            
-            setTimeout(() => {
-                notification.style.opacity = '0';
-                setTimeout(() => notification.remove(), 300);
-            }, duration);
-        }
-    };
-    
-    // Initialize notification system
-    notificationSystem.init();
-    
-    // Weather Auto-Update
-    let weatherUpdateInterval;
-    const WEATHER_UPDATE_INTERVAL = 300000; // 5 minutes
 
     // --- Global State ---
     const pageTitles = {
         weather: "Weather Alerts",
-        weather: "Weather Forecast",
         reminders: "Reminders",
         ledger: "Ledger",
         crops: "Crops Knowledge",
     };
 
     // --- Utility Functions ---
-    const fetchWeatherData = async () => {
-        try {
-            const position = await new Promise((resolve, reject) => {
-                navigator.geolocation.getCurrentPosition(resolve, reject);
-                navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 });
-            });
-            const { latitude, longitude } = position.coords;
-            return await api('get_weather', { params: { lat: latitude, lon: longitude } });
-        } catch (err) {
-            console.error('Weather fetch error:', err);
-            return null;
-        }
-    };
-
-    const updateWeatherDisplay = (weather, output) => {
-        if (!weather || !output) return;
-
-        const current = weather.current;
-        let html = `
-            <div class="weather-widget ${weather.alerts?.length ? 'alert' : ''}">
-                <div class="weather-main">
-                    <div>
-                        <div class="weather-temp">${current.temp.toFixed(1)}°C</div>
-                        <p>Feels like: ${current.feels_like.toFixed(1)}°C</p>
-                    </div>
-                    <img class="weather-icon" src="http://openweathermap.org/img/wn/${current.weather[0].icon}@2x.png" 
-                         alt="${current.weather[0].description}">
-                </div>
-                <div class="weather-details">
-                    <div class="weather-detail-item">
-                        <strong>Humidity</strong>
-                        <p>${current.humidity}%</p>
-                    </div>
-                    <div class="weather-detail-item">
-                        <strong>Wind</strong>
-                        <p>${current.wind_speed} m/s</p>
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        if (weather.alerts?.length) {
-            html += `
-                <div class="weather-alert">
-                    <h4>⚠️ Weather Alerts!</h4>
-                    ${weather.alerts.map(alert => 
-                        `<p><strong>${escapeHTML(alert.event)}:</strong> ${escapeHTML(alert.description)}</p>`
-                    ).join('')}
-                </div>
-            `;
-            // Show notification for new alerts
-            notificationSystem.show('⚠️ New weather alert! Check the weather page.', 'warning');
-        }
-        
-        output.innerHTML = html;
-    };
-
-    const checkReminders = async () => {
-        const result = await api('get_reminders');
-        if (!result) return;
-        
-        const today = new Date();
-        result.reminders.forEach(reminder => {
-            const reminderDate = new Date(reminder.createdAt);
-            if (reminderDate.toDateString() === today.toDateString()) {
-                notificationSystem.show(`🔔 Reminder: ${reminder.text}`, 'success');
-            }
-        });
-    };
-
     const api = async (action, options = {}) => {
         const { method = 'GET', body = null, params = {} } = options;
         
-        // Use a root-relative path to ensure it works from any page depth
-        let url = `/AWAS/api/api.php?action=${action}`;
+        let url = `api/api.php?action=${action}`;
         if (method === 'GET' && Object.keys(params).length > 0) {
             url += '&' + new URLSearchParams(params).toString();
         }
+
+        // FIX: The API is in ../api/ from the perspective of index.html
+        url = '../' + url;
 
         const fetchOptions = {
             method: method,
@@ -135,17 +37,37 @@ document.addEventListener("DOMContentLoaded", () => {
 
         try {
             const response = await fetch(url, fetchOptions);
-            const result = await response.json();
             
+            // Handle non-JSON responses (like from weather API proxy)
+            const text = await response.text();
+            let result;
+            try {
+                result = JSON.parse(text);
+            } catch (e) {
+                // If it's not JSON, it might be the weather API.
+                // This is a bit of a hack, better to have /api/weather.php
+                // But for now, we'll assume it's the weather data.
+                // A better fix is in api.php to wrap the weather data.
+                
+                // Let's rely on the api.php fix instead.
+                // Re-parsing as JSON. The fix in api.php makes this safe.
+                result = JSON.parse(text);
+            }
+
             // Check for authentication failure
             if (result.auth === false) {
                 window.location.href = 'login.html';
                 return null;
             }
-            if (!result.success) {
-            if (result.success === false) { // Handle API-level errors
+            // Check for API-side error (e.g., success: false)
+            if (result.success === false) {
                 throw new Error(result.message);
             }
+            // Check for OpenWeatherMap error (relayed by our API)
+            if (result.success === true && action === 'get_weather' && result.data.cod != 200) {
+                 throw new Error(result.data.message || 'Error fetching weather data.');
+            }
+            
             return result;
         } catch (err) {
             showError(err.message);
@@ -170,6 +92,7 @@ document.addEventListener("DOMContentLoaded", () => {
     };
     
     const escapeHTML = (str) => {
+        if (typeof str !== 'string') str = String(str);
         return str.replace(/[&<>"']/g, (m) => ({
             '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
         }[m]));
@@ -180,7 +103,7 @@ document.addEventListener("DOMContentLoaded", () => {
         navButtons.forEach(btn => {
             btn.classList.toggle('active', btn.dataset.page === pageId);
         });
-        if (pageTitleEl) pageTitleEl.textContent = pageTitles[pageId] || "Dashboard";
+        pageTitle.textContent = pageTitles[pageId] || "Dashboard";
         
         // Load page content
         switch (pageId) {
@@ -198,36 +121,37 @@ document.addEventListener("DOMContentLoaded", () => {
     const loadWeather = async () => {
         showLoading();
         const page = cloneTemplate('template-weather');
-        const output = page.querySelector('#weather-output');
+        const output = page.getElementById('weather-output');
         
-        // Clear existing interval if any
-        if (weatherUpdateInterval) {
-            clearInterval(weatherUpdateInterval);
-        }
-        
-        // Set up auto-update
-        weatherUpdateInterval = setInterval(async () => {
-            const weatherData = await fetchWeatherData();
-            if (weatherData) {
-                updateWeatherDisplay(weatherData, output);
-            }
-        }, WEATHER_UPDATE_INTERVAL);
-        
-    const fetchBtn = page.querySelector('#fetch-weather-btn');
-    if (fetchBtn) fetchBtn.onclick = loadWeather;
-        const fetchBtn = page.querySelector('#fetch-weather-btn');
-        if (fetchBtn) fetchBtn.onclick = loadWeather; // Re-fetch when button is clicked
-
+        page.getElementById('fetch-weather-btn').onclick = loadWeather;
         appContent.innerHTML = '';
         appContent.appendChild(page);
 
-        output.innerHTML = '<div class="loading-spinner"></div>'; // Show loading inside the output
         try {
-            const weatherData = await fetchWeatherData();
-            if (weatherData) {
-                updateWeatherDisplay(weatherData, output);
-            }
-        
+            const position = await new Promise((resolve, reject) => {
+                 if (!navigator.geolocation) {
+                    return reject(new Error("Geolocation is not supported by your browser."));
+                }
+                navigator.geolocation.getCurrentPosition(resolve, reject);
+            });
+            const { latitude, longitude } = position.coords;
+            output.innerHTML = '<div class="loading-spinner"></div>';
+            
+            const result = await api('get_weather', { params: { lat: latitude, lon: longitude } });
+            if (!result) return; // Error handled by api()
+            
+            const weather = result.data; // Data is nested now
+
+            // Render Weather
+            const current = weather.current;
+            let html = `
+                <div class="form-card">
+                    <h3>Current Weather</h3>
+                    <p style="font-size: 2.5em; margin: 0; font-weight: 700;">${current.temp.toFixed(1)}°C</p>
+                    <p>Feels like: ${current.feels_like.toFixed(1)}°C</p>
+                    <p style="text-transform: capitalize;">${escapeHTML(current.weather[0].description)}</p>
+                </div>
+            `;
             
             if (weather.alerts && weather.alerts.length > 0) {
                 html += `
@@ -242,7 +166,7 @@ document.addEventListener("DOMContentLoaded", () => {
             output.innerHTML = html;
             
         } catch (err) {
-            output.innerHTML = `<p class="error">Could not get location. Please enable it in your browser.</p>`;
+            output.innerHTML = `<p class="error">${err.message || "Could not get location. Please enable it in your browser."}</p>`;
         }
     };
     
@@ -250,26 +174,23 @@ document.addEventListener("DOMContentLoaded", () => {
     const loadReminders = async () => {
         showLoading();
         const page = cloneTemplate('template-reminders');
-        const listEl = page.querySelector('#reminder-list');
-
-        const reminderForm = page.querySelector('#reminder-form');
-        const reminderInput = page.querySelector('#reminder-text');
-        if (reminderForm) {
-            reminderForm.onsubmit = async (e) => {
-                e.preventDefault();
-                if (!reminderInput || !reminderInput.value) return;
-
-                const result = await api('add_reminder', {
-                    method: 'POST',
-                    body: { text: reminderInput.value }
-                });
-
-                if (result) {
-                    reminderInput.value = '';
-                    loadReminders(); // Refresh
-                }
-            };
-        }
+        const listEl = page.getElementById('reminder-list');
+        
+        page.getElementById('reminder-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const input = page.getElementById('reminder-text');
+            if (!input.value) return;
+            
+            const result = await api('add_reminder', {
+                method: 'POST',
+                body: { text: input.value }
+            });
+            
+            if (result) {
+                input.value = '';
+                loadReminders(); // Refresh
+            }
+        };
         
         appContent.innerHTML = '';
         appContent.appendChild(page);
@@ -291,7 +212,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 <button class="delete-btn" data-id="${r.id}">&times;</button>
             `;
             item.querySelector('.delete-btn').onclick = async (e) => {
-                const id = e.target.dataset.id;
+                // --- THIS IS THE FIX ---
+                // Use closest() to ensure we get the button, not the &times; text
+                const id = e.target.closest('.delete-btn').dataset.id;
+                // --- END OF FIX ---
                 if (confirm('Delete this reminder?')) {
                     await api('delete_reminder', { params: { id } });
                     loadReminders(); // Refresh
@@ -305,30 +229,26 @@ document.addEventListener("DOMContentLoaded", () => {
     const loadLedger = async () => {
         showLoading();
         const page = cloneTemplate('template-ledger');
-        const listEl = page.querySelector('#ledger-list');
-        const chartEl = page.querySelector('#profit-chart');
-
+        const listEl = page.getElementById('ledger-list');
+        const chartEl = page.getElementById('profit-chart');
+        
         // Set date to today
-        const ledgerDate = page.querySelector('#ledger-date');
-        if (ledgerDate) ledgerDate.valueAsDate = new Date();
-
+        page.getElementById('ledger-date').valueAsDate = new Date();
+        
         // Handle form submission
-        const ledgerForm = page.querySelector('#ledger-form');
-        if (ledgerForm) {
-            ledgerForm.onsubmit = async (e) => {
-                e.preventDefault();
-                const data = {
-                    crop: page.querySelector('#ledger-crop')?.value,
-                    revenue: page.querySelector('#ledger-revenue')?.value,
-                    cost: page.querySelector('#ledger-cost')?.value,
-                    date: page.querySelector('#ledger-date')?.value
-                };
-                if (!data.crop || !data.date) return;
-
-                await api('add_ledger', { method: 'POST', body: data });
-                loadLedger(); // Refresh
+        page.getElementById('ledger-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const data = {
+                crop: page.getElementById('ledger-crop').value,
+                revenue: page.getElementById('ledger-revenue').value,
+                cost: page.getElementById('ledger-cost').value,
+                date: page.getElementById('ledger-date').value
             };
-        }
+            if (!data.crop || !data.date) return;
+            
+            await api('add_ledger', { method: 'POST', body: data });
+            loadLedger(); // Refresh
+        };
         
         appContent.innerHTML = '';
         appContent.appendChild(page);
@@ -340,16 +260,21 @@ document.addEventListener("DOMContentLoaded", () => {
         if (result.profits.length === 0) {
             chartEl.innerHTML = '<p style="text-align:center; font-size: 14px; color: var(--text-light);">No profit data yet.</p>';
         } else {
-            const maxProfit = Math.max(...result.profits.map(p => p.profit));
+            // Find max profit for scaling, ensuring it's a positive number
+            const maxProfit = Math.max(0, ...result.profits.map(p => parseFloat(p.profit)));
+            
             chartEl.innerHTML = result.profits.map(p => {
-                const width = (p.profit / maxProfit) * 100;
+                const profit = parseFloat(p.profit);
+                // Handle cases where maxProfit is 0 to avoid division by zero
+                const width = maxProfit > 0 ? (Math.max(0, profit) / maxProfit) * 100 : 0;
+                
                 return `
                     <div class="chart-bar">
                         <span class="chart-bar-label">${escapeHTML(p.crop)}</span>
                         <div class="chart-bar-bg">
-                            <div class="chart-bar-fill" style="width: ${width > 0 ? width : 0}%"></div>
+                            <div class="chart-bar-fill" style="width: ${width}%"></div>
                         </div>
-                        <span class="chart-bar-value">RM ${parseFloat(p.profit).toFixed(2)}</span>
+                        <span class="chart-bar-value">RM ${profit.toFixed(2)}</span>
                     </div>
                 `;
             }).join('');
@@ -378,4 +303,102 @@ document.addEventListener("DOMContentLoaded", () => {
             item.querySelector('.delete-btn').onclick = async (e) => {
                 const id = e.target.closest('.delete-btn').dataset.id;
                 if (confirm('Delete this entry?')) {
-                    await api('delete_ledger', { par
+                    await api('delete_ledger', { params: { id } });
+                    loadLedger(); // Refresh
+                }
+            };
+            listEl.appendChild(item);
+        });
+    };
+    
+    // 4. CROPS
+    const loadCrops = async () => {
+        showLoading();
+        const page = cloneTemplate('template-crops');
+        const listEl = page.getElementById('crop-list');
+        
+        appContent.innerHTML = '';
+        appContent.appendChild(page);
+
+        const result = await api('get_crops');
+        if (!result) return;
+        
+        if (result.crops.length === 0) {
+            listEl.innerHTML = '<p style="text-align:center; color: var(--text-light);">No crop data found.</p>';
+            return;
+        }
+        
+        listEl.innerHTML = '';
+        result.crops.forEach(crop => {
+            const item = document.createElement('div');
+            item.className = 'crop-item-card';
+            item.dataset.id = crop.id;
+            item.innerHTML = `
+                <img src="${escapeHTML(crop.image || '')}" alt="${escapeHTML(crop.name)}" onerror="this.style.display='none'">
+                <div style="flex: 1;">
+                    <p style="margin:0; font-weight: 600;">${escapeHTML(crop.name)}</p>
+                    <span style="font-size: 14px; color: var(--text-light);">${escapeHTML(crop.bestSeason)}</span>
+                </div>
+                <span>&rarr;</span>
+            `;
+            item.onclick = () => loadCropDetail(crop.id);
+            listEl.appendChild(item);
+        });
+    };
+    
+    const loadCropDetail = async (id) => {
+        showLoading();
+        const result = await api('get_crop_detail', { params: { id } });
+        if (!result) return;
+        
+        const crop = result.crop;
+        const page = cloneTemplate('template-crop-detail');
+        
+        page.querySelector('.btn-back').onclick = () => navigateTo('crops');
+        page.getElementById('crop-image').src = crop.image || '';
+        page.getElementById('crop-name').textContent = crop.name;
+        page.getElementById('crop-season').textContent = crop.bestSeason;
+        page.getElementById('crop-watering').textContent = crop.watering;
+        page.getElementById('crop-cost').textContent = parseFloat(crop.avgCost).toFixed(2);
+        page.getElementById('crop-revenue').textContent = parseFloat(crop.avgRevenue).toFixed(2);
+        page.getElementById('crop-profit').textContent = parseFloat(crop.profitMargin).toFixed(1);
+        
+        const diseasesList = page.getElementById('crop-diseases');
+        diseasesList.innerHTML = '';
+        // Assuming diseases are stored as comma-separated string
+        const diseases = crop.diseases ? crop.diseases.split(',') : [];
+        if (diseases.length > 0) {
+            diseases.forEach(d => {
+                const li = document.createElement('li');
+                li.textContent = escapeHTML(d.trim());
+                diseasesList.appendChild(li);
+            });
+        } else {
+            diseasesList.innerHTML = '<li>No common diseases listed.</li>';
+        }
+        
+        appContent.innerHTML = '';
+        appContent.appendChild(page);
+    };
+    
+    // --- INIT ---
+    const checkSession = async () => {
+        const result = await api('check_session');
+        if (result && result.auth) {
+            navigateTo('weather'); // Start on weather page
+            // Add click listeners
+            navButtons.forEach(btn => {
+                btn.onclick = () => navigateTo(btn.dataset.page);
+            });
+            logoutBtn.onclick = async (e) => {
+                e.preventDefault();
+                await api('logout');
+                window.location.href = 'login.html';
+            };
+        } else {
+            window.location.href = 'login.html';
+        }
+    };
+
+    checkSession();
+});

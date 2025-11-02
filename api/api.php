@@ -1,77 +1,68 @@
 <?php
 // api/api.php
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-
-// Start session at the very beginning to avoid any "headers already sent" issues.
-if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-}
-
-// Ensure no output before headers
-ob_start();
-
-// Set JSON content type
-header('Content-Type: application/json');
-
-// Log incoming requests
-$requestLog = [
-    'time' => date('Y-m-d H:i:s'),
-    'method' => $_SERVER['REQUEST_METHOD'],
-    'action' => $_GET['action'] ?? 'none',
-    'post_data' => file_get_contents('php://input')
-];
-error_log(json_encode($requestLog));
-
 include 'db.php';
 
-// Enable CORS for development
-header('Access-Control-Allow-Origin: http://localhost');
-header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Accept');
-header('Access-Control-Allow-Credentials: true');
-
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    exit(0);
-}
+// --- CONFIGURATION ---
+// FIX: Move API key to a variable. Ideally, this would be in an environment file.
+$openWeatherApiKey = '306515b318763e19aba681108b077d1c';
+// ---------------------
 
 $action = $_GET['action'] ?? '';
 $user_id = $_SESSION['user_id'] ?? null;
 $data = json_decode(file_get_contents('php://input'), true);
 
-// Log received data
-error_log("Action: " . $action);
-error_log("Received data: " . json_encode($data));
-
 try {
     switch ($action) {
-        // --- WEATHER ---
-        case 'get_weather':
-            // No authentication needed for this endpoint
-            $lat = $_GET['lat'] ?? null;
-            $lon = $_GET['lon'] ?? null;
-
-            if (!$lat || !$lon) {
-                throw new Exception('Latitude and longitude are required');
+        // --- AUTH ---
+        case 'register':
+            $fullName = $data['fullName'] ?? '';
+            $email = $data['email'] ?? '';
+            $phone = $data['phone'] ?? '';
+            $password = $data['password'] ?? '';
+            if (empty($fullName) || empty($email) || empty($password) || empty($phone)) {
+                throw new Exception('All fields are required');
             }
+            $hash = password_hash($password, PASSWORD_DEFAULT);
+            $stmt = $conn->prepare("INSERT INTO users (fullName, email, phone, password) VALUES (?, ?, ?, ?)");
+            $stmt->execute([$fullName, $email, $phone, $hash]);
+            echo json_encode(['success' => true, 'message' => 'Registration successful']);
+            break;
 
-            $apiKey = '306515b318763e19aba681108b077d1c'; // Consider moving to a config file
-            $url = "https://api.openweathermap.org/data/3.0/onecall?lat=$lat&lon=$lon&exclude=minutely&units=metric&appid=$apiKey";
-
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $url);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            // In production, consider setting CURLOPT_SSL_VERIFYPEER to true and providing a CA bundle.
-            // curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true); 
-
-            $response = curl_exec($ch);
-
-            if (curl_errno($ch)) {
-                throw new Exception('Weather API error: ' . curl_error($ch));
+        case 'login':
+            $email = $data['email'] ?? '';
+            $password = $data['password'] ?? '';
+            if (empty($email) || empty($password)) {
+                throw new Exception('Email and password are required');
             }
-            curl_close($ch);
+            $stmt = $conn->prepare("SELECT * FROM users WHERE email = ?");
+            $stmt->execute([$email]);
+            $user = $stmt->fetch();
+            if ($user && password_verify($password, $user['password'])) {
+                $_SESSION['user_id'] = $user['id'];
+                $_SESSION['user_name'] = $user['fullName'];
+                echo json_encode(['success' => true, 'message' => 'Login successful']);
+            } else {
+                throw new Exception('Invalid email or password');
+            }
+            break;
 
-            echo $response; // Forward the JSON response from OpenWeatherMap
+        case 'forgot_password':
+            $email = $data['email'] ?? '';
+            // TODO: Add email sending logic here (e.g., using PHPMailer)
+            // This feature is not implemented, but we send a success message
+            // as the frontend (auth.js) expects.
+            echo json_encode(['success' => true, 'message' => 'If an account exists, a reset link has been sent.']);
+            break;
+            
+        case 'check_session':
+            $user_id = check_auth();
+            echo json_encode(['success' => true, 'auth' => true, 'name' => $_SESSION['user_name']]);
+            break;
+            
+        case 'logout':
+            session_unset();
+            session_destroy();
+            echo json_encode(['success' => true, 'message' => 'Logged out']);
             break;
 
         // --- LEDGER ---
@@ -119,4 +110,63 @@ try {
             break;
             
         case 'delete_reminder':
-            $user_id = chec
+            $user_id = check_auth();
+            $id = $_GET['id'] ?? 0;
+            $stmt = $conn->prepare("DELETE FROM reminders WHERE id = ? AND user_id = ?");
+            $stmt->execute([$id, $user_id]);
+            echo json_encode(['success' => true, 'message' => 'Reminder deleted']);
+            break;
+
+        // --- CROPS ---
+        case 'get_crops':
+            check_auth();
+            $stmt = $conn->query("SELECT * FROM crops ORDER BY name");
+            echo json_encode(['success' => true, 'crops' => $stmt->fetchAll()]);
+            break;
+            
+        case 'get_crop_detail':
+            check_auth();
+            $id = $_GET['id'] ?? 0;
+            $stmt = $conn->prepare("SELECT * FROM crops WHERE id = ?");
+            $stmt->execute([$id]);
+            echo json_encode(['success' => true, 'crop' => $stmt->fetch()]);
+            break;
+
+        // --- WEATHER ---
+        case 'get_weather':
+            check_auth();
+            // Use the API key from the variable at the top
+            $lat = $_GET['lat'] ?? '0';
+            $lon = $_GET['lon'] ?? '0';
+            $url = "https://api.openweathermap.org/data/3.0/onecall?lat=$lat&lon=$lon&exclude=minutely&units=metric&appid=$openWeatherApiKey";
+            
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $url);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+            $output = curl_exec($ch);
+            
+            // --- FIX: Add error handling for cURL ---
+            if ($output === false) {
+                curl_close($ch);
+                throw new Exception('Failed to fetch weather data. cURL Error.');
+            }
+            curl_close($ch);
+            
+            $weatherData = json_decode($output, true);
+            if ($weatherData === null) {
+                throw new Exception('Failed to decode weather data.');
+            }
+            
+            // --- FIX: Wrap the response in our standard API format ---
+            // This makes the frontend 'api' function much happier.
+            echo json_encode(['success' => true, 'data' => $weatherData]);
+            break;
+            // --- End of Weather Fix ---
+            
+        default:
+            throw new Exception('Invalid action');
+    }
+} catch (Exception $e) {
+    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+}
+?>
