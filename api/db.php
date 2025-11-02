@@ -4,7 +4,7 @@ header('Content-Type: application/json');
 
 // --- CONFIGURATION ---
 $host = 'localhost';
-$db_name = 'awas_db';
+$db_name = 'AWAS';
 $username = 'root';
 $password = ''; // Change this if you have a password for XAMPP/MAMP
 // ---------------------
