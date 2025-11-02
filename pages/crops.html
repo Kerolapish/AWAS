@@ -6,6 +6,8 @@
     <title>Crop Management - AWAS</title>
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="../css/crop.css">
+    <link rel="stylesheet" href="../css/navbar.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         /* Modal styles */
         .modal {
@@ -273,13 +275,31 @@
 <body>
 
     <header>
-        <h1>Agricultural Weather Alert System (AWAS)</h1>
-        <nav class="main-nav">
-            <a href="index.html" class="nav-button active">Index</a>
-            <a href="weather.html" class="nav-button">Weather</a>
-            <a href="crops.html" class="nav-button active">Crop</a>
-            <a href="ledger.html" class="nav-button">Ledger</a>
-        </nav>
+        <div class="header-content">
+            <div class="user-info">
+                <span><i class="fas fa-user"></i> Welcome, <span id="username">User</span></span>
+                <button class="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
+            </div>
+            <h1>Agricultural Weather Alert System (AWAS)</h1>
+            <nav class="main-nav">
+                <a href="index.html" class="nav-button">
+                    <i class="fas fa-home"></i>
+                    Dashboard
+                </a>
+                <a href="weather.html" class="nav-button">
+                    <i class="fas fa-cloud-sun"></i>
+                    Weather
+                </a>
+                <a href="crops.html" class="nav-button active">
+                    <i class="fas fa-seedling"></i>
+                    Crops
+                </a>
+                <a href="ledger.html" class="nav-button">
+                    <i class="fas fa-book"></i>
+                    Ledger
+                </a>
+            </nav>
+        </div>
     </header>
 
     <main class="crop-page-container">

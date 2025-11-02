@@ -5,17 +5,158 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AWAS Dashboard</title>
     <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/navbar.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
+<script>
+    const API_KEY = '379e206f8a253b49fb634f6f9377ddf7';
+    const API_URL = 'https://api.openweathermap.org/data/3.0/onecall';
+
+    function getWeatherIcon(iconCode) {
+        const icons = {
+            '01d': '☀️', '01n': '🌙',
+            '02d': '⛅️', '02n': '☁️',
+            '03d': '☁️', '03n': '☁️',
+            '04d': '☁️', '04n': '☁️',
+            '09d': '🌦️', '09n': '🌦️',
+            '10d': '🌧️', '10n': '🌧️',
+            '11d': '🌩️', '11n': '🌩️',
+            '13d': '❄️', '13n': '❄️',
+            '50d': '🌫️', '50n': '🌫️'
+        };
+        return icons[iconCode] || '🌀';
+    }
+
+    async function fetchDashboardWeather(lat, lon) {
+        try {
+            const url = `${API_URL}?lat=${lat}&lon=${lon}&units=metric&appid=${API_KEY}`;
+            const response = await fetch(url);
+            const data = await response.json();
+
+            const current = data.current;
+            const tz = data.timezone.replace('_', ' ');
+            const windKmh = (current.wind_speed * 3.6).toFixed(0);
+
+            // Kemaskini elemen di dashboard
+            document.querySelector('.current-weather h2').textContent = `Lokasi: ${tz}`;
+            document.querySelector('.weather-icon').textContent = getWeatherIcon(current.weather[0].icon);
+            document.querySelector('.weather-temp').innerHTML = `
+                ${current.temp.toFixed(0)}°C
+                <span>Feels like ${current.feels_like.toFixed(0)}°C</span>
+            `;
+            document.querySelector('.weather-details').innerHTML = `
+                <div class="detail-item"><strong>Precipitation:</strong> ${(data.hourly[0].pop * 100).toFixed(0)}%</div>
+                <div class="detail-item"><strong>Humidity:</strong> ${current.humidity}%</div>
+                <div class="detail-item"><strong>Wind:</strong> ${windKmh} km/h</div>
+            `;
+
+            // Ubah forecast pendek (contoh 3 jam akan datang)
+            const hourlyDiv = document.querySelector('.scroll-container');
+            hourlyDiv.innerHTML = '';
+            data.hourly.slice(0, 6).forEach((h, i) => {
+                const hour = new Date(h.dt * 1000).getHours();
+                const ampm = hour >= 12 ? 'PM' : 'AM';
+                const time = hour === 0 ? '12 AM' : `${hour % 12 || 12} ${ampm}`;
+                hourlyDiv.innerHTML += `
+                    <div class="hour-item">
+                        <span class="time">${i === 0 ? 'Now' : time}</span>
+                        <span class="icon">${getWeatherIcon(h.weather[0].icon)}</span>
+                        <span class="temp">${h.temp.toFixed(0)}°</span>
+                    </div>
+                `;
+            });
+
+        } catch (err) {
+            console.error('Weather fetch error:', err);
+            document.querySelector('.current-weather h2').textContent = 'Error loading weather data';
+        }
+    }
+
+    // ✅ Fungsi untuk ambil data Ledger
+    async function loadLedgerSummary() {
+        try {
+            const response = await fetch('../api/api.php?action=get_ledger');
+            const data = await response.json();
+
+            if (!data.success) {
+                console.error('Ledger error:', data.message);
+                return;
+            }
+
+            let totalRevenue = 0;
+            let totalExpenses = 0;
+
+            data.entries.forEach(row => {
+                totalRevenue += parseFloat(row.revenue || 0);
+                totalExpenses += parseFloat(row.cost || 0);
+            });
+
+            const netProfit = totalRevenue - totalExpenses;
+
+            document.getElementById('total-revenue-dashboard').textContent = formatCurrency(totalRevenue);
+            document.getElementById('total-expenses-dashboard').textContent = formatCurrency(totalExpenses);
+            document.getElementById('net-profit-dashboard').textContent = formatCurrency(netProfit);
+        } catch (error) {
+            console.error('Ledger summary fetch error:', error);
+        }
+    }
+
+    function formatCurrency(number) {
+        return new Intl.NumberFormat('ms-MY', {
+            style: 'currency',
+            currency: 'MYR'
+        }).format(number);
+    }
+
+    // ✅ Panggil bila halaman dimuat
+    window.addEventListener('load', () => {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    fetchDashboardWeather(pos.coords.latitude, pos.coords.longitude);
+                },
+                (err) => {
+                    console.warn('Location error:', err);
+                    fetchDashboardWeather(1.8596, 103.0903);
+                }
+            );
+        } else {
+            fetchDashboardWeather(1.8596, 103.0903);
+        }
+
+        // ✅ Tambah baris ini
+        loadLedgerSummary();
+    });
+</script>
+
 <body>
 
     <header>
-        <h1>Agricultural Weather Alert System (AWAS)</h1>
-        <nav class="main-nav">
-            <a href="index.html" class="nav-button active">Index</a>
-            <a href="weather.html" class="nav-button active">Weather</a>
-            <a href="crops.html" class="nav-button">Crop</a>
-            <a href="ledger.html" class="nav-button">Ledger</a>
-        </nav>
+        <div class="header-content">
+            <div class="user-info">
+                <span><i class="fas fa-user"></i> Welcome, <span id="username">User</span></span>
+                <button class="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
+            </div>
+            <h1>Agricultural Weather Alert System (AWAS)</h1>
+            <nav class="main-nav">
+                <a href="index.html" class="nav-button active">
+                    <i class="fas fa-home"></i>
+                    Dashboard
+                </a>
+                <a href="weather.html" class="nav-button">
+                    <i class="fas fa-cloud-sun"></i>
+                    Weather
+                </a>
+                <a href="crops.html" class="nav-button">
+                    <i class="fas fa-seedling"></i>
+                    Crops
+                </a>
+                <a href="ledger.html" class="nav-button">
+                    <i class="fas fa-book"></i>
+                    Ledger
+                </a>
+            </nav>
+        </div>
     </header>
 
     <main class="dashboard-container">
@@ -53,11 +194,21 @@
             </div>
         </section>
 
-        <section class="card soil-data">
-            <h3>Sensor Data</h3>
-            <p><strong>Soil Moisture (Zone A):</strong> <span class="data-good">Optimal</span></p>
-            <p><strong>Soil Moisture (Zone B):</strong> <span class="data-warn">Low</span></p>
-            <p><strong>Soil Temp:</strong> 28°C</p>
+        <!-- ✅ Gantikan Soil Data dengan Ledger Summary -->
+        <section class="card ledger-summary-dashboard">
+            <h3>Financial Summary (From Ledger)</h3>
+            <div class="summary-card">
+                <h4>Total Revenue</h4>
+                <span id="total-revenue-dashboard">RM 0.00</span>
+            </div>
+            <div class="summary-card">
+                <h4>Total Expenses</h4>
+                <span id="total-expenses-dashboard">RM 0.00</span>
+            </div>
+            <div class="summary-card">
+                <h4>Net Profit / Loss</h4>
+                <span id="net-profit-dashboard">RM 0.00</span>
+            </div>
         </section>
 
         <section class="card crop-advisory">
