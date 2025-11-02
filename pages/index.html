@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - AWAS</title>
+    <link rel="stylesheet" href="css\style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        
+        <header class="app-header">
+            <h1 id="page-title">Dashboard</h1>
+            <a href="#" id="logout-btn" class="logout-btn">Logout</a>
+        </header>
+        
+        <main id="app-content" class="app-content">
+            </main>
+        
+        <nav class="app-nav">
+            <button class="nav-btn" data-page="weather">
+                <span>Weather</span>
+            </button>
+            <button class="nav-btn" data-page="reminders">
+                <span>Reminders</span>
+            </button>
+            <button class="nav-btn" data-page="ledger">
+                <span>Ledger</span>
+            </button>
+            <button class="nav-btn" data-page="crops">
+                <span>Crops</span>
+            </button>
+        </nav>
+    </div>
+
+    <template id="template-loading">
+        <div class="loading-spinner"></div>
+    </template>
+    
+    <template id="template-error">
+        <p class="error-full-page"></p>
+    </template>
+    
+    <template id="template-weather">
+        <div class="page-content">
+            <button id="fetch-weather-btn" class="btn">Refresh Local Weather</button>
+            <div id="weather-output"></div>
+        </div>
+    </template>
+    
+    <template id="template-reminders">
+        <div class="page-content">
+            <form id="reminder-form" class="form-row">
+                <input type="text" id="reminder-text" placeholder="Add new reminder..." required>
+                <button type="submit" class="btn-small">+</button>
+            </form>
+            <div id="reminder-list" class="item-list"></div>
+        </div>
+    </template>
+    
+    <template id="template-ledger">
+        <div class="page-content">
+            <div id="profit-chart-container">
+                <h3>Profit Per Crop</h3>
+                <div id="profit-chart"></div>
+            </div>
+            
+            <form id="ledger-form" class="form-card">
+                <h3>Add New Entry</h3>
+                <div class="form-group">
+                    <label for="ledger-crop">Crop Name</label>
+                    <input type="text" id="ledger-crop" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="ledger-revenue">Revenue (RM)</label>
+                        <input type="number" id="ledger-revenue" step="0.01" value="0.00" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="ledger-cost">Cost (RM)</label>
+                        <input type="number" id="ledger-cost" step="0.01" value="0.00" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="ledger-date">Date</label>
+                    <input type="date" id="ledger-date" required>
+                </div>
+                <button type="submit" class="btn">Save Entry</button>
+            </form>
+            
+            <h3 class="list-header">All Entries</h3>
+            <div id="ledger-list" class="item-list"></div>
+        </div>
+    </template>
+
+    <template id="template-crops">
+        <div class="page-content" id="crop-list">
+            </div>
+    </template>
+    
+    <template id="template-crop-detail">
+        <div class="page-content">
+            <button class="btn-back" data-page="crops">&larr; Back to Crops</button>
+            <div class="crop-detail-card">
+                <img id="crop-image" src="" alt="Crop Image" class="crop-detail-image">
+                <h2 id="crop-name"></h2>
+                <p><strong>Best Season:</strong> <span id="crop-season"></span></p>
+                <p><strong>Watering:</strong> <span id="crop-watering"></span></p>
+                
+                <div class="card-inset">
+                    <h3>Economics</h3>
+                    <p>Avg. Cost: RM <span id="crop-cost"></span></p>
+                    <p>Avg. Revenue: RM <span id="crop-revenue"></span></p>
+                    <p>Profit Margin: <span id="crop-profit"></span>%</p>
+                </div>
+                
+                <div class="card-inset">
+                    <h3>Common Diseases</h3>
+                    <ul id="crop-diseases"></ul>
+                </div>
+            </div>
+        </div>
+    </template>
+    
+    <script src="main.js"></script>
+</body>
+</html>
