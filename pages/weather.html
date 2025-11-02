@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Weather Details - AWAS</title>
     <link rel="stylesheet" href="../css/style.css">
-    
     <link rel="stylesheet" href="../css/weather.css">
 </head>
 <body>
@@ -13,8 +12,8 @@
     <header>
         <h1>Agricultural Weather Alert System (AWAS)</h1>
         <nav class="main-nav">
-            <a href="index.html" class="nav-button active">Index</a>
-            <a href="index.html" class="nav-button active">Weather</a>
+            <a href="index.html" class="nav-button">Index</a>
+            <a href="weather.html" class="nav-button active">Weather</a>
             <a href="crops.html" class="nav-button">Crop</a>
             <a href="ledger.html" class="nav-button">Ledger</a>
         </nav>
@@ -30,24 +29,9 @@
                     <table class="forecast-table">
                         <tbody id="hourly-forecast-body">
                             <tr>
-                                <td>Now</td>
-                                <td><span class="icon">☀️</span> 31°</td>
-                                <td>10%</td>
-                                <td>8 km/h</td>
+                                <td colspan="4" style="text-align: center;">Loading hourly data...</td>
                             </tr>
-                            <tr>
-                                <td>4:00 PM</td>
-                                <td><span class="icon">☀️</span> 30°</td>
-                                <td>5%</td>
-                                <td>10 km/h</td>
-                            </tr>
-                            <tr>
-                                <td>5:00 PM</td>
-                                <td><span class="icon">⛅️</span> 29°</td>
-                                <td>15%</td>
-                                <td>12 km/h</td>
-                            </tr>
-                            </tbody>
+                        </tbody>
                     </table>
                 </div>
             </section>
@@ -56,26 +40,11 @@
                 <h3>7-Day Forecast</h3>
                 <div class="table-responsive">
                     <table class="forecast-table">
-                        <tbody id="daily-forecast-body">
+                         <tbody id="daily-forecast-body">
                             <tr>
-                                <td>Today</td>
-                                <td><span class="icon">☀️</span> Partly Cloudy</td>
-                                <td>31° / 24°</td>
-                                <td>20%</td>
+                                <td colspan="4" style="text-align: center;">Loading daily data...</td>
                             </tr>
-                            <tr>
-                                <td>Tuesday</td>
-                                <td><span class="icon">🌧️</span> Thunderstorms</td>
-                                <td>29° / 24°</td>
-                                <td>80%</td>
-                            </tr>
-                            <tr>
-                                <td>Wednesday</td>
-                                <td><span class="icon">🌧️</span> Showers</td>
-                                <td>30° / 25°</td>
-                                <td>60%</td>
-                            </tr>
-                            </tbody>
+                        </tbody>
                     </table>
                 </div>
             </section>
@@ -85,36 +54,36 @@
         <div class="details-column">
             
             <section class="card">
-                <h3>Current Weather: <span id="current-location">[Location]</span></h3>
+                <h3>Current Weather: <span id="current-location">[Loading...]</span></h3>
                 <div class="current-main">
-                    <span id="current-icon" class="icon">[☀️]</span>
-                    <span id="current-temp" class="temp">[31]°C</span>
-                    <span id="current-desc">[Partly Cloudy]</span>
+                    <span id="current-icon" class="icon">[?]</span>
+                    <span id="current-temp" class="temp">[--]°C</span>
+                    <span id="current-desc">[Loading...]</span>
                 </div>
                 <div class="current-details-grid">
                     <div>
                         <small>Feels Like</small>
-                        <strong id="current-feelslike">[34]°</strong>
+                        <strong id="current-feelslike">[--]°</strong>
                     </div>
                     <div>
                         <small>Wind</small>
-                        <strong id="current-wind">[8] km/h</strong>
+                        <strong id="current-wind">[--] km/h</strong>
                     </div>
                     <div>
                         <small>Humidity</small>
-                        <strong id="current-humidity">[72]%</strong>
+                        <strong id="current-humidity">[--]%</strong>
                     </div>
                     <div>
                         <small>UV Index</small>
-                        <strong id="current-uv">[9] of 11</strong>
+                        <strong id="current-uv">[--] of 11</strong>
                     </div>
                     <div>
                         <small>Pressure</small>
-                        <strong id="current-pressure">[1012] hPa</strong>
+                        <strong id="current-pressure">[--] hPa</strong>
                     </div>
                     <div>
                         <small>Visibility</small>
-                        <strong id="current-visibility">[10] km</strong>
+                        <strong id="current-visibility">[--] km</strong>
                     </div>
                 </div>
             </section>
@@ -124,25 +93,223 @@
                 <div class="current-details-grid">
                     <div>
                         <small>Sunrise</small>
-                        <strong id="detail-sunrise">[7:01 AM]</strong>
+                        <strong id="detail-sunrise">[--:-- AM]</strong>
                     </div>
                     <div>
                         <small>Sunset</small>
-                        <strong id="detail-sunset">[7:15 PM]</strong>
+                        <strong id="detail-sunset">[--:-- PM]</strong>
                     </div>
                     <div>
                         <small>Moon Phase</small>
-                        <strong id="detail-moon">[Waning Gibbous]</strong>
+                        <strong id="detail-moon">[Loading...]</strong>
                     </div>
                     <div>
                         <small>Spraying</small>
-                        <strong id="detail-spraying" class="data-warn">[Not Ideal]</strong>
+                        <strong id="detail-spraying" class="data-good">[Loading...]</strong>
                     </div>
                 </div>
             </section>
         </div>
 
     </main>
+
+<script>
+    // Kunci API anda
+    const API_KEY = '379e206f8a253b49fb634f6f9377ddf7';
+    const API_URL = 'https://api.openweathermap.org/data/3.0/onecall';
+
+    // --- HELPER FUNCTIONS ---
+    function getWeatherIcon(iconCode) {
+        const icons = {
+            '01d': '☀️', '01n': '🌙',
+            '02d': '⛅️', '02n': '☁️',
+            '03d': '☁️', '03n': '☁️',
+            '04d': '☁️', '04n': '☁️',
+            '09d': '🌦️', '09n': '🌦️',
+            '10d': '🌧️', '10n': '🌧️',
+            '11d': '🌩️', '11n': '🌩️',
+            '13d': '❄️', '13n': '❄️',
+            '50d': '🌫️', '50n': '🌫️',
+        };
+        return icons[iconCode] || '🌀';
+    }
+
+    function formatTime(unixTimestamp, timezoneOffset) {
+        const date = new Date((unixTimestamp + timezoneOffset) * 1000);
+        return date.toLocaleTimeString('en-US', { 
+            hour: '2-digit', 
+            minute: '2-digit', 
+            timeZone: 'UTC',
+            hour12: true 
+        });
+    }
+
+    function formatHour(unixTimestamp, timezoneOffset) {
+        const date = new Date((unixTimestamp + timezoneOffset) * 1000);
+        return date.toLocaleTimeString('en-US', { 
+            hour: 'numeric', 
+            timeZone: 'UTC',
+            hour12: true 
+        }).toLowerCase();
+    }
+    
+    function formatDay(unixTimestamp, timezoneOffset) {
+        const date = new Date((unixTimestamp + timezoneOffset) * 1000);
+        return date.toLocaleDateString('en-US', { weekday: 'long', timeZone: 'UTC' });
+    }
+
+    function getMoonPhase(phase) {
+        if (phase === 0 || phase === 1) return 'New Moon';
+        if (phase > 0 && phase < 0.25) return 'Waxing Crescent';
+        if (phase === 0.25) return 'First Quarter';
+        if (phase > 0.25 && phase < 0.5) return 'Waxing Gibbous';
+        if (phase === 0.5) return 'Full Moon';
+        if (phase > 0.5 && phase < 0.75) return 'Waning Gibbous';
+        if (phase === 0.75) return 'Last Quarter';
+        return 'Waning Crescent';
+    }
+
+    function getSprayingConditions(windSpeedKmh, rainPop) {
+        // Angin < 15km/j dan Tiada Hujan (POP < 20%)
+        if (windSpeedKmh < 15 && rainPop < 0.2) {
+            return { text: 'Good', className: 'data-good' };
+        }
+        // Angin kuat
+        if (windSpeedKmh >= 15) {
+            return { text: 'Not Ideal (Windy)', className: 'data-warn' };
+        }
+        // Akan hujan
+        return { text: 'Not Ideal (Rain)', className: 'data-warn' };
+    }
+    
+    function setupNotificationPermission() {
+        if ("Notification" in window) {
+            if (Notification.permission === "default") {
+                Notification.requestPermission();
+            }
+        }
+    }
+    // --- END OF HELPER FUNCTIONS ---
+
+
+    // FUNGSI UTAMA UNTUK AMBIL DAN PAPAR DATA
+    async function fetchAndDisplayWeather(lat, lon) {
+        
+        // Buang ini apabila debugging selesai
+        console.log('DEBUG: Latitude yang dihantar:', lat);
+        console.log('DEBUG: Longitude yang dihantar:', lon);
+        
+        const url = `${API_URL}?lat=${lat}&lon=${lon}&units=metric&appid=${API_KEY}`;
+        
+        try {
+            const response = await fetch(url);
+            if (!response.ok) throw new Error(`Weather data not found (${response.status})`);
+            
+            const data = await response.json();
+            // console.log(data); // Buka F12 (Console) untuk lihat semua data
+
+            // --- DEKLARASI PEMBOLEH UBAH ---
+            const tzOffset = data.timezone_offset;
+            const current = data.current;
+            const windKmh = (current.wind_speed * 3.6);
+            
+            // --- 1. Kemas kini Cuaca Semasa (Current Weather) ---
+            document.getElementById('current-location').textContent = data.timezone.replace('_', ' ');
+            document.getElementById('current-icon').textContent = getWeatherIcon(current.weather[0].icon);
+            document.getElementById('current-temp').textContent = `${current.temp.toFixed(0)}°C`;
+            document.getElementById('current-desc').textContent = current.weather[0].description;
+            
+            document.getElementById('current-feelslike').textContent = `${current.feels_like.toFixed(0)}°`;
+            document.getElementById('current-wind').textContent = `${windKmh.toFixed(0)} km/h`;
+            document.getElementById('current-humidity').textContent = `${current.humidity}%`;
+            document.getElementById('current-uv').textContent = `${current.uvi.toFixed(0)} of 11`;
+            document.getElementById('current-pressure').textContent = `${current.pressure} hPa`;
+            document.getElementById('current-visibility').textContent = `${(current.visibility / 1000).toFixed(0)} km`;
+
+            // --- 2. Kemas kini Butiran Pertanian (Agri-Details) ---
+            document.getElementById('detail-sunrise').textContent = formatTime(current.sunrise, tzOffset);
+            document.getElementById('detail-sunset').textContent = formatTime(current.sunset, tzOffset);
+            document.getElementById('detail-moon').textContent = getMoonPhase(data.daily[0].moon_phase);
+            
+            const spraying = getSprayingConditions(windKmh, data.hourly[0].pop);
+            const sprayingEl = document.getElementById('detail-spraying');
+            sprayingEl.textContent = spraying.text;
+            sprayingEl.className = spraying.className; 
+
+            // --- 3. Ramalan Setiap Jam (Hourly Forecast) ---
+            const hourlyBody = document.getElementById('hourly-forecast-body');
+            hourlyBody.innerHTML = '';
+            
+            data.hourly.slice(1, 6).forEach(hour => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${formatHour(hour.dt, tzOffset)}</td>
+                    <td><span class="icon">${getWeatherIcon(hour.weather[0].icon)}</span> ${hour.temp.toFixed(0)}°</td>
+                    <td>${(hour.pop * 100).toFixed(0)}%</td>
+                    <td>${(hour.wind_speed * 3.6).toFixed(0)} km/h</td>
+                `;
+                hourlyBody.appendChild(row);
+            });
+
+            // --- 4. Ramalan Harian (Daily Forecast) ---
+            const dailyBody = document.getElementById('daily-forecast-body');
+            dailyBody.innerHTML = '';
+            
+            data.daily.slice(0, 7).forEach((day, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${index === 0 ? 'Today' : formatDay(day.dt, tzOffset)}</td>
+                    <td><span class="icon">${getWeatherIcon(day.weather[0].icon)}</span> ${day.weather[0].main}</td>
+                    <td>${day.temp.max.toFixed(0)}° / ${day.temp.min.toFixed(0)}°</td>
+                    <td>${(day.pop * 100).toFixed(0)}%</td>
+                `;
+                dailyBody.appendChild(row);
+            });
+
+            // --- 5. Hantar Notifikasi Amaran ---
+            if (data.alerts && data.alerts.length > 0 && Notification.permission === "granted") {
+                const alertCount = data.alerts.length;
+                const bodyText = data.alerts.map(a => `${a.event}`).join(', ');
+                
+                new Notification(`⚠️ ${alertCount} Weather Alert!`, {
+                    body: bodyText,
+                    icon: 'weather_alert_icon.png' 
+                });
+            }
+
+
+        } catch (error) {
+            document.getElementById('current-location').textContent = `Error: ${error.message}`;
+            console.error('Failed to fetch weather:', error);
+        }
+    }
+
+
+    // FUNGSI PERMULAAN
+    window.addEventListener('load', () => {
+        // Minta kebenaran notifikasi dahulu
+        setupNotificationPermission();
+        
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const { latitude, longitude } = position.coords;
+                    fetchAndDisplayWeather(latitude, longitude); 
+                },
+                (error) => {
+                    console.error('Error getting location:', error);
+                    // Lokasi sandaran (Fallback): Parit Raja
+                    document.getElementById('current-location').textContent = "[Default: Parit Raja]";
+                    fetchAndDisplayWeather(1.8596, 103.0903); 
+                }
+            );
+        } else {
+            document.getElementById('current-location').textContent = "Geolocation Not Supported";
+            fetchAndDisplayWeather(1.8596, 103.0903); 
+        }
+    });
+
+</script>
 
 </body>
 </html>
