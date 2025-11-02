@@ -36,4 +36,3 @@ function check_auth() {
     // Jika session ada, kembalikan user_id
     return $_SESSION['user_id'];
 }
-?>
