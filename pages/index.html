@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - AWAS</title>
+    <title>AWAS Weather</title>
     <link rel="stylesheet" href="../css/style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -11,29 +11,16 @@
 </head>
 <body>
     <div class="app-container">
-        
         <header class="app-header">
-            <h1 id="page-title">Dashboard</h1>
-            <a href="#" id="logout-btn" class="logout-btn">Logout</a>
+            <h1>Weather Dashboard</h1>
         </header>
         
         <main id="app-content" class="app-content">
-            </main>
-        
-        <nav class="app-nav">
-            <button class="nav-btn" data-page="weather">
-                <span>Weather</span>
-            </button>
-            <button class="nav-btn" data-page="reminders">
-                <span>Reminders</span>
-            </button>
-            <button class="nav-btn" data-page="ledger">
-                <span>Ledger</span>
-            </button>
-            <button class="nav-btn" data-page="crops">
-                <span>Crops</span>
-            </button>
-        </nav>
+            <div class="page-content">
+                <button id="fetch-weather-btn" class="btn">Refresh Local Weather</button>
+                <div id="weather-output"></div>
+            </div>
+        </main>
     </div>
 
     <template id="template-loading">

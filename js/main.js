@@ -1,8 +1,9 @@
 // main.js
 document.addEventListener("DOMContentLoaded", () => {
     const appContent = document.getElementById("app-content");
-    const pageTitle = document.getElementById("page-title");
-    const navButtons = document.querySelectorAll(".nav-btn");
+    // Page title and nav/logout may not exist in the simplified, weather-only UI.
+    const pageTitleEl = document.getElementById("page-title");
+    const navButtons = document.querySelectorAll(".nav-btn") || [];
     const logoutBtn = document.getElementById("logout-btn");
     
     // Notification System
@@ -175,7 +176,7 @@ document.addEventListener("DOMContentLoaded", () => {
         navButtons.forEach(btn => {
             btn.classList.toggle('active', btn.dataset.page === pageId);
         });
-        pageTitle.textContent = pageTitles[pageId] || "Dashboard";
+        if (pageTitleEl) pageTitleEl.textContent = pageTitles[pageId] || "Dashboard";
         
         // Load page content
         switch (pageId) {
@@ -193,7 +194,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const loadWeather = async () => {
         showLoading();
         const page = cloneTemplate('template-weather');
-        const output = page.getElementById('weather-output');
+        const output = page.querySelector('#weather-output');
         
         // Clear existing interval if any
         if (weatherUpdateInterval) {
@@ -208,7 +209,8 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         }, WEATHER_UPDATE_INTERVAL);
         
-        page.getElementById('fetch-weather-btn').onclick = loadWeather;
+    const fetchBtn = page.querySelector('#fetch-weather-btn');
+    if (fetchBtn) fetchBtn.onclick = loadWeather;
         appContent.innerHTML = '';
         appContent.appendChild(page);
 
@@ -240,23 +242,26 @@ document.addEventListener("DOMContentLoaded", () => {
     const loadReminders = async () => {
         showLoading();
         const page = cloneTemplate('template-reminders');
-        const listEl = page.getElementById('reminder-list');
-        
-        page.getElementById('reminder-form').onsubmit = async (e) => {
-            e.preventDefault();
-            const input = page.getElementById('reminder-text');
-            if (!input.value) return;
-            
-            const result = await api('add_reminder', {
-                method: 'POST',
-                body: { text: input.value }
-            });
-            
-            if (result) {
-                input.value = '';
-                loadReminders(); // Refresh
-            }
-        };
+        const listEl = page.querySelector('#reminder-list');
+
+        const reminderForm = page.querySelector('#reminder-form');
+        const reminderInput = page.querySelector('#reminder-text');
+        if (reminderForm) {
+            reminderForm.onsubmit = async (e) => {
+                e.preventDefault();
+                if (!reminderInput || !reminderInput.value) return;
+
+                const result = await api('add_reminder', {
+                    method: 'POST',
+                    body: { text: reminderInput.value }
+                });
+
+                if (result) {
+                    reminderInput.value = '';
+                    loadReminders(); // Refresh
+                }
+            };
+        }
         
         appContent.innerHTML = '';
         appContent.appendChild(page);
@@ -292,26 +297,30 @@ document.addEventListener("DOMContentLoaded", () => {
     const loadLedger = async () => {
         showLoading();
         const page = cloneTemplate('template-ledger');
-        const listEl = page.getElementById('ledger-list');
-        const chartEl = page.getElementById('profit-chart');
-        
+        const listEl = page.querySelector('#ledger-list');
+        const chartEl = page.querySelector('#profit-chart');
+
         // Set date to today
-        page.getElementById('ledger-date').valueAsDate = new Date();
-        
+        const ledgerDate = page.querySelector('#ledger-date');
+        if (ledgerDate) ledgerDate.valueAsDate = new Date();
+
         // Handle form submission
-        page.getElementById('ledger-form').onsubmit = async (e) => {
-            e.preventDefault();
-            const data = {
-                crop: page.getElementById('ledger-crop').value,
-                revenue: page.getElementById('ledger-revenue').value,
-                cost: page.getElementById('ledger-cost').value,
-                date: page.getElementById('ledger-date').value
+        const ledgerForm = page.querySelector('#ledger-form');
+        if (ledgerForm) {
+            ledgerForm.onsubmit = async (e) => {
+                e.preventDefault();
+                const data = {
+                    crop: page.querySelector('#ledger-crop')?.value,
+                    revenue: page.querySelector('#ledger-revenue')?.value,
+                    cost: page.querySelector('#ledger-cost')?.value,
+                    date: page.querySelector('#ledger-date')?.value
+                };
+                if (!data.crop || !data.date) return;
+
+                await api('add_ledger', { method: 'POST', body: data });
+                loadLedger(); // Refresh
             };
-            if (!data.crop || !data.date) return;
-            
-            await api('add_ledger', { method: 'POST', body: data });
-            loadLedger(); // Refresh
-        };
+        }
         
         appContent.innerHTML = '';
         appContent.appendChild(page);
@@ -410,18 +419,19 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!result) return;
         
         const crop = result.crop;
-        const page = cloneTemplate('template-crop-detail');
-        
-        page.querySelector('.btn-back').onclick = () => navigateTo('crops');
-        page.getElementById('crop-image').src = crop.image || '';
-        page.getElementById('crop-name').textContent = crop.name;
-        page.getElementById('crop-season').textContent = crop.bestSeason;
-        page.getElementById('crop-watering').textContent = crop.watering;
-        page.getElementById('crop-cost').textContent = parseFloat(crop.avgCost).toFixed(2);
-        page.getElementById('crop-revenue').textContent = parseFloat(crop.avgRevenue).toFixed(2);
-        page.getElementById('crop-profit').textContent = parseFloat(crop.profitMargin).toFixed(1);
-        
-        const diseasesList = page.getElementById('crop-diseases');
+    const page = cloneTemplate('template-crop-detail');
+
+    const backBtn = page.querySelector('.btn-back');
+    if (backBtn) backBtn.onclick = () => navigateTo('crops');
+    const imgEl = page.querySelector('#crop-image'); if (imgEl) imgEl.src = crop.image || '';
+    const nameEl = page.querySelector('#crop-name'); if (nameEl) nameEl.textContent = crop.name;
+    const seasonEl = page.querySelector('#crop-season'); if (seasonEl) seasonEl.textContent = crop.bestSeason;
+    const wateringEl = page.querySelector('#crop-watering'); if (wateringEl) wateringEl.textContent = crop.watering;
+    const costEl = page.querySelector('#crop-cost'); if (costEl) costEl.textContent = parseFloat(crop.avgCost).toFixed(2);
+    const revenueEl = page.querySelector('#crop-revenue'); if (revenueEl) revenueEl.textContent = parseFloat(crop.avgRevenue).toFixed(2);
+    const profitEl = page.querySelector('#crop-profit'); if (profitEl) profitEl.textContent = parseFloat(crop.profitMargin).toFixed(1);
+
+    const diseasesList = page.querySelector('#crop-diseases');
         diseasesList.innerHTML = '';
         // Assuming diseases are stored as comma-separated string
         const diseases = crop.diseases ? crop.diseases.split(',') : [];
@@ -440,36 +450,30 @@ document.addEventListener("DOMContentLoaded", () => {
     };
     
     // --- INIT ---
-    const checkSession = async () => {
-        const result = await api('check_session');
-        if (result && result.auth) {
-            // Initialize real-time features
-            navigateTo('weather'); // Start on weather page
-            
-            // Set up periodic checks
-            setInterval(checkReminders, 60000); // Check reminders every minute
-            
-            // Initial reminder check
-            checkReminders();
-            
-            // Add click listeners
-            navButtons.forEach(btn => {
-                btn.onclick = () => navigateTo(btn.dataset.page);
-            });
-            
+    // Authentication is disabled; initialize app directly.
+    const initApp = async () => {
+        navigateTo('weather'); // Start on weather page
+
+        // Set up periodic checks
+        setInterval(checkReminders, 60000); // Check reminders every minute
+
+        // Initial reminder check
+        checkReminders();
+
+        // Wire nav buttons safely
+        navButtons.forEach(btn => {
+            btn.onclick = () => navigateTo(btn.dataset.page);
+        });
+
+        if (logoutBtn) {
             logoutBtn.onclick = async (e) => {
                 e.preventDefault();
-                // Clear intervals before logout
-                if (weatherUpdateInterval) {
-                    clearInterval(weatherUpdateInterval);
-                }
-                await api('logout');
+                if (weatherUpdateInterval) clearInterval(weatherUpdateInterval);
+                try { await api('logout'); } catch (e) { /* ignore */ }
                 window.location.href = 'login.html';
             };
-        } else {
-            window.location.href = 'login.html';
         }
     };
 
-    checkSession();
+    initApp();
 });

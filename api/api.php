@@ -1,10 +1,42 @@
 <?php
 // api/api.php
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
+// Ensure no output before headers
+ob_start();
+
+// Set JSON content type
+header('Content-Type: application/json');
+
+// Log incoming requests
+$requestLog = [
+    'time' => date('Y-m-d H:i:s'),
+    'method' => $_SERVER['REQUEST_METHOD'],
+    'action' => $_GET['action'] ?? 'none',
+    'post_data' => file_get_contents('php://input')
+];
+error_log(json_encode($requestLog));
+
 include 'db.php';
+
+// Enable CORS for development
+header('Access-Control-Allow-Origin: http://localhost');
+header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type, Accept');
+header('Access-Control-Allow-Credentials: true');
+
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    exit(0);
+}
 
 $action = $_GET['action'] ?? '';
 $user_id = $_SESSION['user_id'] ?? null;
 $data = json_decode(file_get_contents('php://input'), true);
+
+// Log received data
+error_log("Action: " . $action);
+error_log("Received data: " . json_encode($data));
 
 try {
     switch ($action) {
@@ -24,20 +56,44 @@ try {
             break;
 
         case 'login':
+            error_log("Login attempt - Email: " . ($data['email'] ?? 'not provided'));
+            
             $email = $data['email'] ?? '';
             $password = $data['password'] ?? '';
             if (empty($email) || empty($password)) {
                 throw new Exception('Email and password are required');
             }
-            $stmt = $conn->prepare("SELECT * FROM users WHERE email = ?");
-            $stmt->execute([$email]);
-            $user = $stmt->fetch();
-            if ($user && password_verify($password, $user['password'])) {
-                $_SESSION['user_id'] = $user['id'];
-                $_SESSION['user_name'] = $user['fullName'];
-                echo json_encode(['success' => true, 'message' => 'Login successful']);
-            } else {
-                throw new Exception('Invalid email or password');
+            
+            try {
+                $stmt = $conn->prepare("SELECT * FROM users WHERE email = ?");
+                $stmt->execute([$email]);
+                $user = $stmt->fetch();
+                
+                if ($user && password_verify($password, $user['password'])) {
+                    // Start a new session
+                    session_start();
+                    session_regenerate_id(true);
+                    
+                    $_SESSION['user_id'] = $user['id'];
+                    $_SESSION['user_name'] = $user['fullName'];
+                    
+                    error_log("Login successful for user: " . $user['id']);
+                    
+                    echo json_encode([
+                        'success' => true,
+                        'message' => 'Login successful',
+                        'user' => [
+                            'id' => $user['id'],
+                            'name' => $user['fullName']
+                        ]
+                    ]);
+                } else {
+                    error_log("Login failed - Invalid credentials for email: " . $email);
+                    throw new Exception('Invalid email or password');
+                }
+            } catch (PDOException $e) {
+                error_log("Database error during login: " . $e->getMessage());
+                throw new Exception('Database error occurred');
             }
             break;
 
