@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Crop Ledger - AWAS</title>
     <link rel="stylesheet" href="../css/style.css">
-    
     <link rel="stylesheet" href="../css/ledger.css">
 </head>
 <body>
@@ -13,9 +12,9 @@
     <header>
         <h1>Agricultural Weather Alert System (AWAS)</h1>
         <nav class="main-nav">
-            <a href="index.html" class="nav-button">Weather</a>
-            <a href="crop.html" class="nav-button">Crop</a>
-            <a href="ledger.html" class="nav-button active">Ledger</a>
+            <a href="./index.html" class="nav-button">Weather</a>
+            <a href="./crops.html" class="nav-button">Crop</a>
+            <a href="./ledger.html" class="nav-button active">Ledger</a>
         </nav>
     </header>
 
@@ -41,12 +40,13 @@
                 <label for="crop-select">View Ledger For:</label>
                 <select id="crop-select">
                     <option value="all">All Crops</option>
-                    <option value="chili-a">Chili Padi - Field A</option>
-                    <option value="corn-b">Corn - Field B</option>
-                    <option value="lettuce-g1">Lettuce - Greenhouse 1</option>
+                    <option value="Chili Padi">Chili Padi</option>
+                    <option value="Corn">Corn</option>
+                    <option value="Lettuce">Lettuce</option>
+                    <option value="General (Fertilizer, Labor, etc.)">General (Fertilizer, Labor, etc.)</option>
                 </select>
             </div>
-            <button class="btn-primary">+ Add Transaction</button>
+            <a href="./add_transaction.html" class="btn-primary">+ Add Transaction</a>
         </div>
 
         <section class="card">
@@ -56,29 +56,171 @@
                     <thead>
                         <tr>
                             <th>Date</th>
-                            <th>Description</th>
+                            <th>Description (Crop)</th>
                             <th>Category</th>
                             <th class="text-right">Amount</th>
                         </tr>
                     </thead>
                     <tbody id="transaction-body">
-                        <tr>
-                            <td>2025-10-01</td>
-                            <td>Purchase 20kg Bena 10 Fertilizer</td>
-                            <td><span class="category-badge category-expense">Expense</span></td>
-                            <td class="amount-expense text-right">RM 150.00</td>
-                        </tr>
-                        <tr>
-                            <td>2025-10-03</td>
-                            <td>Chili Padi Seeds (500g)</td>
-                            <td><span class="category-badge category-expense">Expense</span></td>
-                            <td class="amount-expense text-right">RM 75.00</td>
-                        </tr>
-                        <tr>
-                            <td>2025-10-28</td>
-                            <td>Sale of 10kg Corn to Pasar Tani</td>
-                            <td><span class="category-badge category-revenue">Revenue</span></td>
-                            <td class="amount-revenue text-right">RM 350.00</td>
-                        </tr>
-                        <tr>
-                            <td>2
+                        </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // Wait for the page to load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add listener to the dropdown
+            const cropSelect = document.getElementById('crop-select');
+            cropSelect.addEventListener('change', filterAndCalculate);
+            
+            // --- NEW ---
+            // 1. Load data from the database
+            loadLedgerData();
+        });
+
+        /**
+         * --- NEW FUNCTION ---
+         * Fetches data from the PHP script and builds the table.
+         */
+        function loadLedgerData() {
+            const tableBody = document.getElementById('transaction-body');
+            tableBody.innerHTML = '<tr><td colspan="4">Loading data...</td></tr>'; // Show loading message
+
+            fetch('get-ledger.php')
+                .then(response => response.json())
+                .then(data => {
+                    tableBody.innerHTML = ''; // Clear loading message
+
+                    if (data.error) {
+                        tableBody.innerHTML = `<tr><td colspan="4">Error: ${data.error}</td></tr>`;
+                        return;
+                    }
+
+                    if (data.length === 0) {
+                        tableBody.innerHTML = '<tr><td colspan="4">No transactions found.</td></tr>';
+                    }
+
+                    // Loop through each row of data from the database
+                    data.forEach(row => {
+                        let amount = 0;
+                        let categoryClass = '';
+                        let amountClass = '';
+                        let categoryText = '';
+
+                        // Check if it's revenue or cost
+                        if (parseFloat(row.revenue) > 0) {
+                            amount = parseFloat(row.revenue);
+                            categoryClass = 'category-revenue';
+                            amountClass = 'amount-revenue';
+                            categoryText = 'Revenue';
+                        } else {
+                            amount = parseFloat(row.cost);
+                            categoryClass = 'category-expense';
+                            amountClass = 'amount-expense';
+                            categoryText = 'Expense';
+                        }
+                        
+                        // This matches the crop name from the DB (e.g., "Chili Padi")
+                        let cropName = row.crop;
+
+                        // Create the new table row HTML
+                        const newRow = `
+                            <tr data-crop="${cropName}">
+                                <td>${row.date}</td>
+                                <td>${cropName}</td>
+                                <td><span class="category-badge ${categoryClass}">${categoryText}</span></td>
+                                <td class="${amountClass} text-right">RM ${amount.toFixed(2)}</td>
+                            </tr>
+                        `;
+                        
+                        // Add the new row to the table
+                        tableBody.innerHTML += newRow;
+                    });
+
+                    // 2. After building the table, run the calculation
+                    filterAndCalculate();
+                })
+                .catch(error => {
+                    console.error('Fetch Error:', error);
+                    tableBody.innerHTML = '<tr><td colspan="4">Error loading data.</td></tr>';
+                });
+        }
+
+        /**
+         * This function is the same as before.
+         * It filters the table and runs the calculation.
+         */
+        function filterAndCalculate() {
+            // 1. FILTER THE TABLE
+            const selectedCrop = document.getElementById('crop-select').value;
+            const rows = document.querySelectorAll('#transaction-body tr');
+
+            rows.forEach(row => {
+                const rowCrop = row.dataset.crop;
+                if (rowCrop) { // Check if row has data-crop attribute
+                    if (selectedCrop === 'all' || rowCrop === selectedCrop) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                }
+            });
+
+            // 2. RUN THE CALCULATION (only on visible rows)
+            calculateLedger();
+        }
+
+        /**
+         * This function is also the same as before.
+         * It calculates the totals for the visible summary cards.
+         */
+        function calculateLedger() {
+            let totalRevenue = 0;
+            let totalExpenses = 0;
+            const rows = document.querySelectorAll('#transaction-body tr');
+
+            rows.forEach(row => {
+                if (row.style.display !== 'none') {
+                    const revenueCell = row.querySelector('.amount-revenue');
+                    if (revenueCell) {
+                        totalRevenue += parseAmount(revenueCell.textContent);
+                    }
+                    const expenseCell = row.querySelector('.amount-expense');
+                    if (expenseCell) {
+                        totalExpenses += parseAmount(expenseCell.textContent);
+                    }
+                }
+            });
+
+            const netProfit = totalRevenue - totalExpenses;
+            
+            document.getElementById('total-revenue').textContent = formatCurrency(totalRevenue);
+            document.getElementById('total-expenses').textContent = formatCurrency(totalExpenses);
+            const netProfitElement = document.getElementById('net-profit');
+            netProfitElement.textContent = formatCurrency(netProfit);
+
+            netProfitElement.classList.remove('profit-positive', 'profit-negative');
+            if (netProfit >= 0) {
+                netProfitElement.classList.add('profit-positive');
+            } else {
+                netProfitElement.classList.add('profit-negative');
+            }
+        }
+
+        // Helper functions (same as before)
+        function parseAmount(text) {
+            return parseFloat(text.replace('RM', '').replace(/,/g, '').trim()) || 0;
+        }
+
+        function formatCurrency(number) {
+            return new Intl.NumberFormat('ms-MY', {
+                style: 'currency',
+                currency: 'MYR'
+            }).format(number);
+        }
+    </script>
+
+</body>
+</html>
