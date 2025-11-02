@@ -4,6 +4,34 @@ document.addEventListener("DOMContentLoaded", () => {
     const pageTitle = document.getElementById("page-title");
     const navButtons = document.querySelectorAll(".nav-btn");
     const logoutBtn = document.getElementById("logout-btn");
+    
+    // Notification System
+    const notificationSystem = {
+        container: null,
+        init() {
+            this.container = document.createElement('div');
+            this.container.className = 'notification-panel';
+            document.body.appendChild(this.container);
+        },
+        show(message, type = 'success', duration = 5000) {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.innerHTML = message;
+            this.container.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                setTimeout(() => notification.remove(), 300);
+            }, duration);
+        }
+    };
+    
+    // Initialize notification system
+    notificationSystem.init();
+    
+    // Weather Auto-Update
+    let weatherUpdateInterval;
+    const WEATHER_UPDATE_INTERVAL = 300000; // 5 minutes
 
     // --- Global State ---
     const pageTitles = {
@@ -14,6 +42,75 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     // --- Utility Functions ---
+    const fetchWeatherData = async () => {
+        try {
+            const position = await new Promise((resolve, reject) => {
+                navigator.geolocation.getCurrentPosition(resolve, reject);
+            });
+            const { latitude, longitude } = position.coords;
+            return await api('get_weather', { params: { lat: latitude, lon: longitude } });
+        } catch (err) {
+            console.error('Weather fetch error:', err);
+            return null;
+        }
+    };
+
+    const updateWeatherDisplay = (weather, output) => {
+        if (!weather || !output) return;
+
+        const current = weather.current;
+        let html = `
+            <div class="weather-widget ${weather.alerts?.length ? 'alert' : ''}">
+                <div class="weather-main">
+                    <div>
+                        <div class="weather-temp">${current.temp.toFixed(1)}°C</div>
+                        <p>Feels like: ${current.feels_like.toFixed(1)}°C</p>
+                    </div>
+                    <img class="weather-icon" src="http://openweathermap.org/img/wn/${current.weather[0].icon}@2x.png" 
+                         alt="${current.weather[0].description}">
+                </div>
+                <div class="weather-details">
+                    <div class="weather-detail-item">
+                        <strong>Humidity</strong>
+                        <p>${current.humidity}%</p>
+                    </div>
+                    <div class="weather-detail-item">
+                        <strong>Wind</strong>
+                        <p>${current.wind_speed} m/s</p>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        if (weather.alerts?.length) {
+            html += `
+                <div class="weather-alert">
+                    <h4>⚠️ Weather Alerts!</h4>
+                    ${weather.alerts.map(alert => 
+                        `<p><strong>${escapeHTML(alert.event)}:</strong> ${escapeHTML(alert.description)}</p>`
+                    ).join('')}
+                </div>
+            `;
+            // Show notification for new alerts
+            notificationSystem.show('⚠️ New weather alert! Check the weather page.', 'warning');
+        }
+        
+        output.innerHTML = html;
+    };
+
+    const checkReminders = async () => {
+        const result = await api('get_reminders');
+        if (!result) return;
+        
+        const today = new Date();
+        result.reminders.forEach(reminder => {
+            const reminderDate = new Date(reminder.createdAt);
+            if (reminderDate.toDateString() === today.toDateString()) {
+                notificationSystem.show(`🔔 Reminder: ${reminder.text}`, 'success');
+            }
+        });
+    };
+
     const api = async (action, options = {}) => {
         const { method = 'GET', body = null, params = {} } = options;
         
@@ -98,30 +195,29 @@ document.addEventListener("DOMContentLoaded", () => {
         const page = cloneTemplate('template-weather');
         const output = page.getElementById('weather-output');
         
+        // Clear existing interval if any
+        if (weatherUpdateInterval) {
+            clearInterval(weatherUpdateInterval);
+        }
+        
+        // Set up auto-update
+        weatherUpdateInterval = setInterval(async () => {
+            const weatherData = await fetchWeatherData();
+            if (weatherData) {
+                updateWeatherDisplay(weatherData, output);
+            }
+        }, WEATHER_UPDATE_INTERVAL);
+        
         page.getElementById('fetch-weather-btn').onclick = loadWeather;
         appContent.innerHTML = '';
         appContent.appendChild(page);
 
         try {
-            const position = await new Promise((resolve, reject) => {
-                navigator.geolocation.getCurrentPosition(resolve, reject);
-            });
-            const { latitude, longitude } = position.coords;
-            output.innerHTML = '<div class="loading-spinner"></div>';
-            
-            const weather = await api('get_weather', { params: { lat: latitude, lon: longitude } });
-            if (!weather) return; // Error handled by api()
-            
-            // Render Weather
-            const current = weather.current;
-            let html = `
-                <div class="form-card">
-                    <h3>Current Weather</h3>
-                    <p style="font-size: 2.5em; margin: 0; font-weight: 700;">${current.temp.toFixed(1)}°C</p>
-                    <p>Feels like: ${current.feels_like.toFixed(1)}°C</p>
-                    <p style="text-transform: capitalize;">${escapeHTML(current.weather[0].description)}</p>
-                </div>
-            `;
+            const weatherData = await fetchWeatherData();
+            if (weatherData) {
+                updateWeatherDisplay(weatherData, output);
+            }
+        
             
             if (weather.alerts && weather.alerts.length > 0) {
                 html += `
@@ -347,13 +443,26 @@ document.addEventListener("DOMContentLoaded", () => {
     const checkSession = async () => {
         const result = await api('check_session');
         if (result && result.auth) {
+            // Initialize real-time features
             navigateTo('weather'); // Start on weather page
+            
+            // Set up periodic checks
+            setInterval(checkReminders, 60000); // Check reminders every minute
+            
+            // Initial reminder check
+            checkReminders();
+            
             // Add click listeners
             navButtons.forEach(btn => {
                 btn.onclick = () => navigateTo(btn.dataset.page);
             });
+            
             logoutBtn.onclick = async (e) => {
                 e.preventDefault();
+                // Clear intervals before logout
+                if (weatherUpdateInterval) {
+                    clearInterval(weatherUpdateInterval);
+                }
                 await api('logout');
                 window.location.href = 'login.html';
             };

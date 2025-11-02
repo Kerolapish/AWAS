@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crops - AWAS</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <h1 id="page-title">Crops Knowledge</h1>
+            <a href="#" id="logout-btn" class="logout-btn">Logout</a>
+        </header>
+        
+        <main id="app-content" class="app-content">
+            <div class="page-content" id="crop-list">
+                <!-- Crops will be loaded here dynamically -->
+            </div>
+        </main>
+        
+        <nav class="app-nav">
+            <button class="nav-btn" data-page="weather">
+                <span>Weather</span>
+            </button>
+            <button class="nav-btn" data-page="reminders">
+                <span>Reminders</span>
+            </button>
+            <button class="nav-btn" data-page="ledger">
+                <span>Ledger</span>
+            </button>
+            <button class="nav-btn active" data-page="crops">
+                <span>Crops</span>
+            </button>
+        </nav>
+    </div>
+
+    <template id="template-crop-detail">
+        <div class="page-content">
+            <button class="btn-back" data-page="crops">&larr; Back to Crops</button>
+            <div class="crop-detail-card">
+                <img id="crop-image" src="" alt="Crop Image" class="crop-detail-image">
+                <h2 id="crop-name"></h2>
+                <p><strong>Best Season:</strong> <span id="crop-season"></span></p>
+                <p><strong>Watering:</strong> <span id="crop-watering"></span></p>
+                
+                <div class="card-inset">
+                    <h3>Economics</h3>
+                    <p>Avg. Cost: RM <span id="crop-cost"></span></p>
+                    <p>Avg. Revenue: RM <span id="crop-revenue"></span></p>
+                    <p>Profit Margin: <span id="crop-profit"></span>%</p>
+                </div>
+                
+                <div class="card-inset">
+                    <h3>Common Diseases</h3>
+                    <ul id="crop-diseases"></ul>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <script src="../js/main.js"></script>
+</body>
+</html>
