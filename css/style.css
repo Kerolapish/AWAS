@@ -332,12 +332,12 @@ h1, h2, h3 {
     background: var(--card-background);
     box-shadow: 0 0 20px rgba(0,0,0,0.1);
 }
-/* --- Responsive (Mobile) --- 
+/* --- Responsive (Mobile) --- */
 @media (max-width: 900px) {
     .dashboard-container {
-        /* Change to 2 columns on tablets 
+        /* Change to 2 columns on tablets */
         grid-template-columns: repeat(2, 1fr); 
     }
     
-    /* Make all cards span 2 columns, except the main weather card 
+    /* Make all cards span 2 columns, except the main weather card */
     .farm-map, .soil-data, .crop-advisory {*/

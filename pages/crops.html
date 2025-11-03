@@ -515,415 +515,415 @@
     </div>
 
      
-    <script>
-        // PENTING: Laluan API
-        const API_PATH = '../api/api.php';
+   <script>
+    // PENTING: Laluan API
+    const API_PATH = '../api/api.php';
+    
+    // --- UTILITY FUNCTIONS ---
+    function calculateDaysOld(plantingDateStr) {
+        const plantingDate = new Date(plantingDateStr);
+        const today = new Date();
+        const diffTime = Math.abs(today - plantingDate);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        return diffDays;
+    }
 
-        // --- UTILITY FUNCTIONS ---
-        function calculateDaysOld(plantingDateStr) {
-            const plantingDate = new Date(plantingDateStr);
-            const today = new Date();
-            const diffTime = Math.abs(today - plantingDate);
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-            return diffDays;
+    function showNotification(message, type) {
+        const notification = document.getElementById('notification');
+        if (notification) { 
+            notification.textContent = message;
+            notification.className = `notification ${type}`;
+            notification.style.display = 'block';
+            setTimeout(() => { notification.style.display = 'none'; }, 3000);
         }
-
-        function showNotification(message, type) {
-            const notification = document.getElementById('notification');
-            if (notification) {
-                notification.textContent = message;
-                notification.className = `notification ${type}`;
-                notification.style.display = 'block';
-                setTimeout(() => { notification.style.display = 'none'; }, 3000);
-            }
+    }
+    
+    function showAddCropNotification(message, type) {
+        const notification = document.getElementById('add-crop-notification');
+        if (notification) { 
+            notification.textContent = message;
+            notification.className = `notification ${type}`;
+            notification.style.display = 'block';
+            setTimeout(() => { notification.style.display = 'none'; }, 3000);
         }
+    }
 
-        function showAddCropNotification(message, type) {
-            const notification = document.getElementById('add-crop-notification');
-            if (notification) {
-                notification.textContent = message;
-                notification.className = `notification ${type}`;
-                notification.style.display = 'block';
-                setTimeout(() => { notification.style.display = 'none'; }, 3000);
-            }
+    // FUNGSI BARU (REFRESH) - INI ADALAH FUNGSI YANG HILANG DAN KINI WUJUD
+    function refreshCropData() {
+        if (currentCropId) {
+            showNotification('Data refreshed from server.', 'success');
+            openCropModal(currentCropId); // Muat semula modal
         }
+    }
 
-        // FUNGSI BARU (REFRESH) - INI ADALAH FUNGSI YANG HILANG DAN PERLU WUJUD
-        function refreshCropData() {
-            if (currentCropId) {
-                showNotification('Data refreshed from server.', 'success');
-                openCropModal(currentCropId); // Muat semula modal
-            }
+    function populateHistory(history) {
+        const historyList = document.getElementById('history-list');
+        historyList.innerHTML = '';
+        
+        if (history.length === 0) {
+            historyList.innerHTML = '<p style="text-align: center;">No history available for this crop.</p>';
+            return;
         }
-
-        function populateHistory(history) {
-            const historyList = document.getElementById('history-list');
-            historyList.innerHTML = '';
-
-            if (history.length === 0) {
-                historyList.innerHTML = '<p style="text-align: center;">No history available for this crop.</p>';
-                return;
-            }
-
-            history.forEach(item => {
-                const historyItem = document.createElement('div');
-                historyItem.className = 'detail-group';
-                historyItem.innerHTML = `
-                <div style="display: flex; justify-content: space-between;">
-                    <span><strong>${item.action_type.toUpperCase()}</strong></span>
-                    <span>${item.action_date.split(' ')[0]}</span>
-                </div>
-                <div class="detail-value" style="margin-top: 0.5rem;">${item.action_notes || 'No notes.'}</div>
-            `;
-                historyList.appendChild(historyItem);
-            });
-        }
-
-        // --- DOM ELEMENTS & INITIAL SETUP ---
-        const modal = document.getElementById('cropModal');
-        const addCropModal = document.getElementById('addCropModal');
-
-        let currentCropId = null;
-        const modalBodyOriginalContent = document.getElementById('cropModal').querySelector('.modal-body').innerHTML;
-
-
-        // --- FETCH DATA AND RENDER ---
-
-        async function loadCrops() {
-            const cropGrid = document.getElementById('crop-grid');
-            const loadingMessage = document.getElementById('loading-message');
-            if (loadingMessage) loadingMessage.style.display = 'block';
-
-            try {
-                const response = await fetch(`${API_PATH}?action=get_user_crops`);
-                const data = await response.json();
-
-                if (loadingMessage) loadingMessage.style.display = 'none';
-                cropGrid.innerHTML = '';
-
-                if (data.success && data.crops.length > 0) {
-                    data.crops.forEach(crop => {
-                        createCropCard(crop);
-                    });
-                } else if (data.success) {
-                    cropGrid.innerHTML = '<p style="text-align: center; grid-column: 1 / -1;">No crops added yet. Click "+ Add New Crop" to start.</p>';
-                } else {
-                    cropGrid.innerHTML = `<p class="notification error" style="grid-column: 1 / -1; display: block;">Error loading crops: ${data.message}</p>`;
-                }
-            } catch (error) {
-                if (loadingMessage) loadingMessage.style.display = 'none';
-                cropGrid.innerHTML = `<p class="notification error" style="grid-column: 1 / -1; display: block;">Network Error: Cannot connect to PHP API. ${error.message}</p>`;
-            }
-        }
-
-        function createCropCard(crop) {
-            const cropGrid = document.getElementById('crop-grid');
-            const daysOld = calculateDaysOld(crop.planting_date);
-            const healthValue = parseInt(crop.health_status);
-
-            let statusClass = 'status-good';
-            let statusText = 'Good';
-
-            if (healthValue < 70) {
-                statusClass = 'status-warn';
-                statusText = 'Poor';
-            } else if (healthValue < 90) {
-                statusClass = 'status-warn';
-                statusText = 'Warning';
-            }
-
-            const cropCard = document.createElement('article');
-            cropCard.className = 'crop-card';
-            cropCard.innerHTML = `
-            <div class="card-img-placeholder">
-                <span>${crop.crop_type}</span>
-            </div>
-            <div class="card-content">
-                <h3>${crop.crop_name}</h3>
-                <span class="status-badge ${statusClass}">${statusText}</span>
-                
-                <div class="card-stats">
-                    <div class="stat-item">
-                        <span class="stat-number">${daysOld}</span>
-                        <span class="stat-label">Days Old</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-number">${crop.health_status}%</span>
-                        <span class="stat-label">Health</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-number">${crop.soil_moisture}%</span>
-                        <span class="stat-label">Moisture</span>
-                    </div>
-                </div>
-                
-                <a href="#" class="btn-manage" data-crop-id="${crop.id}">Manage</a>
-            </div>
-        `;
-
-            cropGrid.appendChild(cropCard);
-
-            cropCard.querySelector('.btn-manage').addEventListener('click', function (e) {
-                e.preventDefault();
-                openCropModal(this.getAttribute('data-crop-id'));
-            });
-        }
-
-        // --- MODAL & FORM LOGIC ---
-
-        async function openCropModal(cropId) {
-            currentCropId = cropId;
-            modal.style.display = 'flex';
-            modal.querySelector('.modal-body').style.opacity = 0.5;
-
-            try {
-                // Permintaan PHP untuk mendapatkan butiran tanaman dan sejarah
-                const response = await fetch(`${API_PATH}?action=get_crop_details&crop_id=${cropId}`);
-                const data = await response.json();
-
-                // Sediakan modal body untuk dimasukkan semula
-                modal.querySelector('.modal-body').innerHTML = modalBodyOriginalContent;
-
-                if (data.success) {
-                    modal.querySelector('.modal-body').style.opacity = 1;
-
-                    fillDetailsTab(data.crop);
-                    populateHistory(data.history);
-                    setupEditForm(data.crop);
-
-                    rebindModalEvents(); // Rebind events ke elemen baru
-
-                } else {
-                    modal.querySelector('.modal-body').innerHTML = `<p class="notification error" style="display: block;">Error: ${data.message}</p>`;
-                }
-            } catch (error) {
-                modal.querySelector('.modal-body').innerHTML = `<p class="notification error" style="display: block;">Network Error: Failed to fetch crop details. (${error.message})</p>`;
-            }
-        }
-
-        function rebindModalEvents() {
-            // --- RE-BINDING KRITIKAL (Safety Checks added) ---
-
-            // Modal Close Button
-            const closeBtn = modal.querySelector('.close-button');
-            if (closeBtn) closeBtn.addEventListener('click', () => modal.style.display = 'none');
-
-            // Delete Button
-            const deleteBtn = document.getElementById('btn-delete-crop');
-            if (deleteBtn) deleteBtn.addEventListener('click', deleteCrop);
-
-            // Tab Switching
-            document.querySelectorAll('#cropModal .tab').forEach(tab => {
-                tab.addEventListener('click', function () {
-                    const tabId = this.getAttribute('data-tab');
-                    document.querySelectorAll('#cropModal .tab').forEach(t => t.classList.remove('active'));
-                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-                    this.classList.add('active');
-                    document.getElementById(`${tabId}-tab`).classList.add('active');
-
-                    if (tabId === 'history') {
-                        loadCropHistory(currentCropId);
-                    }
-                });
-            });
-
-            // Form Actions
-            const editForm = document.getElementById('edit-form-data');
-            const actionForm = document.getElementById('action-form');
-            const actionTypeSelect = document.getElementById('action-type');
-
-            if (document.getElementById('btn-edit')) document.getElementById('btn-edit').addEventListener('click', showEditForm);
-            if (document.getElementById('btn-cancel-edit')) document.getElementById('btn-cancel-edit').addEventListener('click', hideEditForm);
-            if (document.getElementById('btn-refresh')) document.getElementById('btn-refresh').addEventListener('click', refreshCropData);
-            if (editForm) editForm.addEventListener('submit', saveCropChanges);
-            if (actionForm) actionForm.addEventListener('submit', logAction);
-
-            // Action Form Logic (Notes field visibility)
-            if (actionTypeSelect) {
-                actionTypeSelect.addEventListener('change', function () {
-                    const actionDetailsGroup = document.getElementById('action-details-group');
-                    if (actionDetailsGroup) actionDetailsGroup.style.display = this.value ? 'block' : 'none';
-                });
-            }
-        }
-
-        function fillDetailsTab(crop) {
-            const daysOld = calculateDaysOld(crop.planting_date);
-            const detailsHtml = `
-            <div class="detail-group"><label>Crop Name</label><div class="detail-value">${crop.crop_name}</div></div>
-            <div class="detail-group"><label>Field Location</label><div class="detail-value">${crop.field_location}</div></div>
-            <div class="detail-group"><label>Crop Type</label><div class="detail-value">${crop.crop_type}</div></div>
-            <div class="detail-group"><label>Days Old</label><div class="detail-value">${daysOld} days</div></div>
-            <div class="detail-group"><label>Health Status</label><div class="detail-value">${crop.health_status}%</div></div>
-            <div class="detail-group"><label>Soil Moisture</label><div class="detail-value">${crop.soil_moisture}%</div></div>
-            <div class="detail-group"><label>Last Watered</label><div class="detail-value">${crop.last_watered}</div></div>
-            <div class="detail-group"><label>Next Fertilization</label><div class="detail-value">${crop.next_fertilization}</div></div>
-            <div class="detail-group" style="grid-column: 1 / -1;"><label>Notes</label><div class="detail-value">${crop.notes || 'No notes.'}</div></div>
-        `;
-            modal.querySelector('.crop-details').innerHTML = detailsHtml;
-            document.getElementById('modal-title').textContent = `Manage: ${crop.crop_name}`;
-        }
-
-        function setupEditForm(crop) {
-            document.getElementById('edit-crop-name').value = crop.crop_name;
-            document.getElementById('edit-crop-type').value = crop.crop_type;
-            document.getElementById('edit-field-location').value = crop.field_location;
-            document.getElementById('edit-planting-date').value = crop.planting_date;
-            document.getElementById('edit-health-status').value = crop.health_status;
-            document.getElementById('edit-soil-moisture').value = crop.soil_moisture;
-            document.getElementById('edit-last-watered').value = crop.last_watered;
-            document.getElementById('edit-next-fertilization').value = crop.next_fertilization;
-            document.getElementById('edit-notes').value = crop.notes || '';
-        }
-
-        function showEditForm() {
-            modal.querySelector('.crop-details').style.display = 'none';
-            modal.querySelector('.action-buttons').style.display = 'none';
-            document.getElementById('edit-form-data').classList.add('active');
-        }
-
-        function hideEditForm() {
-            modal.querySelector('.crop-details').style.display = 'grid';
-            modal.querySelector('.action-buttons').style.display = 'flex';
-            document.getElementById('edit-form-data').classList.remove('active');
-        }
-
-        // --- SUBMISSION HANDLERS (Kekal sama) ---
-        async function saveCropChanges(e) {
-            e.preventDefault();
-            const cropId = currentCropId;
-            const formData = new FormData(e.target);
-            formData.append('crop_id', cropId);
-            formData.append('action', 'update_crop');
-
-            try {
-                const response = await fetch(API_PATH, { method: 'POST', body: formData });
-                const data = await response.json();
-
-                if (data.success) {
-                    showNotification('Crop details updated successfully!', 'success');
-                    hideEditForm();
-                    loadCrops();
-                    setTimeout(() => openCropModal(cropId), 500);
-                } else {
-                    showNotification(data.message || 'Error updating crop', 'error');
-                }
-            } catch (error) {
-                showNotification('Network Error: Could not connect to API.', 'error');
-            }
-        }
-
-        async function logAction(e) {
-            e.preventDefault();
-            const actionType = document.getElementById('action-type').value;
-
-            if (!actionType) { showNotification('Please select an action type.', 'error'); return; }
-
-            const formData = new FormData(e.target);
-            formData.append('crop_id', currentCropId);
-            formData.append('action', 'log_crop_action');
-
-            try {
-                const response = await fetch(API_PATH, { method: 'POST', body: formData });
-                const data = await response.json();
-
-                if (data.success) {
-                    showNotification(`Action: ${actionType} logged successfully!`, 'success');
-                    e.target.reset();
-                    setTimeout(() => openCropModal(currentCropId), 500);
-                } else {
-                    showNotification(data.message || 'Error logging action', 'error');
-                }
-            } catch (error) {
-                showNotification('Network Error: Could not connect to API.', 'error');
-            }
-        }
-
-        async function deleteCrop() {
-            if (!confirm(`Are you sure you want to delete this crop and all its history?`)) return;
-
-            try {
-                const response = await fetch(`${API_PATH}?action=delete_crop&crop_id=${currentCropId}`, { method: 'POST', });
-                const data = await response.json();
-
-                if (data.success) {
-                    showNotification('Crop deleted successfully!', 'success');
-                    modal.style.display = 'none';
-                    loadCrops();
-                } else {
-                    showNotification(data.message || 'Error deleting crop', 'error');
-                }
-            } catch (error) {
-                showNotification('Network Error: Could not connect to API.', 'error');
-            }
-        }
-
-        async function loadCropHistory(cropId) {
-            document.getElementById('history-list').innerHTML = '<p style="text-align: center;">Loading history...</p>';
-            try {
-                const result = await fetch(`${API_PATH}?action=get_crop_details&crop_id=${cropId}`);
-                const data = await result.json();
-
-                const historyList = document.getElementById('history-list');
-
-                if (data.success && data.history.length > 0) {
-                    historyList.innerHTML = '';
-                    data.history.forEach(item => {
-                        const historyItem = document.createElement('div');
-                        historyItem.className = 'detail-group';
-                        historyItem.innerHTML = `
-                         <div style="display: flex; justify-content: space-between;">
-                             <span><strong>${item.action_type.toUpperCase()}</strong></span>
-                             <span>${item.action_date.split(' ')[0]}</span>
-                         </div>
-                         <div class="detail-value" style="margin-top: 0.5rem;">${item.action_notes || 'No notes.'}</div>
-                     `;
-                        historyList.appendChild(historyItem);
-                    });
-                } else {
-                    historyList.innerHTML = '<p style="text-align: center;">No history available for this crop.</p>';
-                }
-            } catch (error) {
-                document.getElementById('history-list').innerHTML = '<p class="notification error">Failed to load history.</p>';
-            }
-        }
-
-        async function addNewCrop(e) {
-            e.preventDefault();
-            const formData = new FormData(e.target);
-            formData.append('action', 'add_new_crop');
-
-            const plantingDate = document.getElementById('add-planting-date').value;
-            formData.append('last_watered', plantingDate);
-
-            try {
-                const response = await fetch(API_PATH, { method: 'POST', body: formData });
-                const data = await response.json();
-
-                if (data.success) {
-                    showAddCropNotification('New crop added successfully!', 'success');
-                    addCropModal.style.display = 'none';
-                    loadCrops();
-                } else {
-                    showAddCropNotification(data.message || 'Error adding crop', 'error');
-                }
-            } catch (error) {
-                showAddCropNotification('Network Error: Could not connect to API.', 'error');
-            }
-        }
-
-        // --- INIT ---
-        document.addEventListener('DOMContentLoaded', loadCrops);
-
-        // BINDINGS
-        document.getElementById('btn-add-new-crop').addEventListener('click', () => {
-            document.getElementById('add-planting-date').valueAsDate = new Date();
-            addCropModal.style.display = 'flex';
+        
+        history.forEach(item => {
+            const historyItem = document.createElement('div');
+            historyItem.className = 'detail-group';
+            historyItem.innerHTML = `
+                <div style="display: flex; justify-content: space-between;">
+                    <span><strong>${item.action_type.toUpperCase()}</strong></span>
+                    <span>${item.action_date.split(' ')[0]}</span>
+                </div>
+                <div class="detail-value" style="margin-top: 0.5rem;">${item.action_notes || 'No notes.'}</div>
+            `;
+            historyList.appendChild(historyItem);
         });
-        document.getElementById('close-add-crop').addEventListener('click', () => addCropModal.style.display = 'none');
-        document.getElementById('btn-cancel-add').addEventListener('click', () => addCropModal.style.display = 'none');
-        document.getElementById('add-crop-form').addEventListener('submit', addNewCrop);
-    </script>
+    }
+
+    // --- DOM ELEMENTS & INITIAL SETUP ---
+    const modal = document.getElementById('cropModal');
+    const addCropModal = document.getElementById('addCropModal');
+
+    let currentCropId = null;
+    const modalBodyOriginalContent = document.getElementById('cropModal').querySelector('.modal-body').innerHTML;
+
+
+    // --- FETCH DATA AND RENDER ---
+    
+    async function loadCrops() {
+        const cropGrid = document.getElementById('crop-grid');
+        const loadingMessage = document.getElementById('loading-message');
+        if (loadingMessage) loadingMessage.style.display = 'block';
+        
+        try {
+            const response = await fetch(`${API_PATH}?action=get_user_crops`);
+            const data = await response.json();
+            
+            if (loadingMessage) loadingMessage.style.display = 'none';
+            cropGrid.innerHTML = '';
+            
+            if (data.success && data.crops.length > 0) {
+                data.crops.forEach(crop => {
+                    createCropCard(crop);
+                });
+            } else if (data.success) {
+                cropGrid.innerHTML = '<p style="text-align: center; grid-column: 1 / -1;">No crops added yet. Click "+ Add New Crop" to start.</p>';
+            } else {
+                cropGrid.innerHTML = `<p class="notification error" style="grid-column: 1 / -1; display: block;">Error loading crops: ${data.message}</p>`;
+            }
+        } catch (error) {
+            if (loadingMessage) loadingMessage.style.display = 'none';
+            cropGrid.innerHTML = `<p class="notification error" style="grid-column: 1 / -1; display: block;">Network Error: Cannot connect to PHP API. ${error.message}</p>`;
+        }
+    }
+    
+    function createCropCard(crop) {
+        const cropGrid = document.getElementById('crop-grid');
+        const daysOld = calculateDaysOld(crop.planting_date);
+        const healthValue = parseInt(crop.health_status);
+        
+        let statusClass = 'status-good';
+        let statusText = 'Good';
+        
+        if (healthValue < 70) {
+            statusClass = 'status-warn';
+            statusText = 'Poor';
+        } else if (healthValue < 90) {
+            statusClass = 'status-warn';
+            statusText = 'Warning';
+        }
+
+        const cropCard = document.createElement('article');
+        cropCard.className = 'crop-card';
+        cropCard.innerHTML = `
+            <div class="card-img-placeholder">
+                <span>${crop.crop_type}</span>
+            </div>
+            <div class="card-content">
+                <h3>${crop.crop_name}</h3>
+                <span class="status-badge ${statusClass}">${statusText}</span>
+                
+                <div class="card-stats">
+                    <div class="stat-item">
+                        <span class="stat-number">${daysOld}</span>
+                        <span class="stat-label">Days Old</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">${crop.health_status}%</span>
+                        <span class="stat-label">Health</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">${crop.soil_moisture}%</span>
+                        <span class="stat-label">Moisture</span>
+                    </div>
+                </div>
+                
+                <a href="#" class="btn-manage" data-crop-id="${crop.id}">Manage</a>
+            </div>
+        `;
+        
+        cropGrid.appendChild(cropCard);
+        
+        cropCard.querySelector('.btn-manage').addEventListener('click', function(e) {
+            e.preventDefault();
+            openCropModal(this.getAttribute('data-crop-id'));
+        });
+    }
+    
+    // --- MODAL & FORM LOGIC ---
+
+    async function openCropModal(cropId) {
+        currentCropId = cropId;
+        modal.style.display = 'flex';
+        modal.querySelector('.modal-body').style.opacity = 0.5; 
+        
+        try {
+            // Permintaan PHP untuk mendapatkan butiran tanaman dan sejarah
+            const response = await fetch(`${API_PATH}?action=get_crop_details&crop_id=${cropId}`);
+            const data = await response.json();
+
+            // Sediakan modal body untuk dimasukkan semula
+            modal.querySelector('.modal-body').innerHTML = modalBodyOriginalContent;
+
+            if (data.success) {
+                modal.querySelector('.modal-body').style.opacity = 1;
+                
+                fillDetailsTab(data.crop);
+                populateHistory(data.history); 
+                setupEditForm(data.crop);
+                
+                rebindModalEvents(); // Rebind events ke elemen baru
+
+            } else {
+                modal.querySelector('.modal-body').innerHTML = `<p class="notification error" style="display: block;">Error: ${data.message}</p>`;
+            }
+        } catch (error) {
+            modal.querySelector('.modal-body').innerHTML = `<p class="notification error" style="display: block;">Network Error: Failed to fetch crop details. (${error.message})</p>`;
+        }
+    }
+    
+    function rebindModalEvents() {
+        // --- RE-BINDING KRITIKAL (Safety Checks added) ---
+        
+        // Modal Close Button
+        const closeBtn = modal.querySelector('.close-button');
+        if (closeBtn) closeBtn.addEventListener('click', () => modal.style.display = 'none');
+
+        // Delete Button
+        const deleteBtn = document.getElementById('btn-delete-crop');
+        if (deleteBtn) deleteBtn.addEventListener('click', deleteCrop);
+        
+        // Tab Switching
+        document.querySelectorAll('#cropModal .tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                const tabId = this.getAttribute('data-tab');
+                document.querySelectorAll('#cropModal .tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                this.classList.add('active');
+                document.getElementById(`${tabId}-tab`).classList.add('active');
+
+                if (tabId === 'history') {
+                    loadCropHistory(currentCropId);
+                }
+            });
+        });
+
+        // Form Actions
+        const editForm = document.getElementById('edit-form-data');
+        const actionForm = document.getElementById('action-form');
+        const actionTypeSelect = document.getElementById('action-type');
+
+        if (document.getElementById('btn-edit')) document.getElementById('btn-edit').addEventListener('click', showEditForm);
+        if (document.getElementById('btn-cancel-edit')) document.getElementById('btn-cancel-edit').addEventListener('click', hideEditForm);
+        if (document.getElementById('btn-refresh')) document.getElementById('btn-refresh').addEventListener('click', refreshCropData); 
+        if (editForm) editForm.addEventListener('submit', saveCropChanges);
+        if (actionForm) actionForm.addEventListener('submit', logAction);
+        
+        // Action Form Logic (Notes field visibility)
+        if (actionTypeSelect) {
+            actionTypeSelect.addEventListener('change', function() {
+                const actionDetailsGroup = document.getElementById('action-details-group');
+                if (actionDetailsGroup) actionDetailsGroup.style.display = this.value ? 'block' : 'none';
+            });
+        }
+    }
+
+    function fillDetailsTab(crop) {
+        const daysOld = calculateDaysOld(crop.planting_date);
+        const detailsHtml = `
+            <div class="detail-group"><label>Crop Name</label><div class="detail-value">${crop.crop_name}</div></div>
+            <div class="detail-group"><label>Field Location</label><div class="detail-value">${crop.field_location}</div></div>
+            <div class="detail-group"><label>Crop Type</label><div class="detail-value">${crop.crop_type}</div></div>
+            <div class="detail-group"><label>Days Old</label><div class="detail-value">${daysOld} days</div></div>
+            <div class="detail-group"><label>Health Status</label><div class="detail-value">${crop.health_status}%</div></div>
+            <div class="detail-group"><label>Soil Moisture</label><div class="detail-value">${crop.soil_moisture}%</div></div>
+            <div class="detail-group"><label>Last Watered</label><div class="detail-value">${crop.last_watered}</div></div>
+            <div class="detail-group"><label>Next Fertilization</label><div class="detail-value">${crop.next_fertilization}</div></div>
+            <div class="detail-group" style="grid-column: 1 / -1;"><label>Notes</label><div class="detail-value">${crop.notes || 'No notes.'}</div></div>
+        `;
+        modal.querySelector('.crop-details').innerHTML = detailsHtml;
+        document.getElementById('modal-title').textContent = `Manage: ${crop.crop_name}`;
+    }
+    
+    function setupEditForm(crop) {
+        document.getElementById('edit-crop-name').value = crop.crop_name;
+        document.getElementById('edit-crop-type').value = crop.crop_type;
+        document.getElementById('edit-field-location').value = crop.field_location;
+        document.getElementById('edit-planting-date').value = crop.planting_date;
+        document.getElementById('edit-health-status').value = crop.health_status;
+        document.getElementById('edit-soil-moisture').value = crop.soil_moisture;
+        document.getElementById('edit-last-watered').value = crop.last_watered;
+        document.getElementById('edit-next-fertilization').value = crop.next_fertilization;
+        document.getElementById('edit-notes').value = crop.notes || '';
+    }
+    
+    function showEditForm() {
+        modal.querySelector('.crop-details').style.display = 'none';
+        modal.querySelector('.action-buttons').style.display = 'none';
+        document.getElementById('edit-form-data').classList.add('active');
+    }
+
+    function hideEditForm() {
+        modal.querySelector('.crop-details').style.display = 'grid';
+        modal.querySelector('.action-buttons').style.display = 'flex';
+        document.getElementById('edit-form-data').classList.remove('active');
+    }
+    
+    // --- SUBMISSION HANDLERS (Kekal sama) ---
+    async function saveCropChanges(e) {
+        e.preventDefault();
+        const cropId = currentCropId;
+        const formData = new FormData(e.target);
+        formData.append('crop_id', cropId);
+        formData.append('action', 'update_crop');
+
+        try {
+             const response = await fetch(API_PATH, { method: 'POST', body: formData });
+             const data = await response.json();
+            
+            if (data.success) {
+                showNotification('Crop details updated successfully!', 'success');
+                hideEditForm();
+                loadCrops();
+                setTimeout(() => openCropModal(cropId), 500);
+            } else {
+                showNotification(data.message || 'Error updating crop', 'error');
+            }
+        } catch (error) {
+            showNotification('Network Error: Could not connect to API.', 'error');
+        }
+    }
+
+    async function logAction(e) {
+        e.preventDefault();
+        const actionType = document.getElementById('action-type').value;
+        
+        if (!actionType) { showNotification('Please select an action type.', 'error'); return; }
+
+        const formData = new FormData(e.target);
+        formData.append('crop_id', currentCropId);
+        formData.append('action', 'log_crop_action');
+        
+        try {
+            const response = await fetch(API_PATH, { method: 'POST', body: formData });
+            const data = await response.json();
+            
+            if (data.success) {
+                showNotification(`Action: ${actionType} logged successfully!`, 'success');
+                e.target.reset();
+                setTimeout(() => openCropModal(currentCropId), 500);
+            } else {
+                showNotification(data.message || 'Error logging action', 'error');
+            }
+        } catch (error) {
+            showNotification('Network Error: Could not connect to API.', 'error');
+        }
+    }
+    
+    async function deleteCrop() {
+        if (!confirm(`Are you sure you want to delete this crop and all its history?`)) return;
+
+        try {
+            const response = await fetch(`${API_PATH}?action=delete_crop&crop_id=${currentCropId}`, { method: 'POST', });
+            const data = await response.json();
+            
+            if (data.success) {
+                showNotification('Crop deleted successfully!', 'success');
+                modal.style.display = 'none';
+                loadCrops();
+            } else {
+                showNotification(data.message || 'Error deleting crop', 'error');
+            }
+        } catch (error) {
+            showNotification('Network Error: Could not connect to API.', 'error');
+        }
+    }
+
+    async function loadCropHistory(cropId) {
+        document.getElementById('history-list').innerHTML = '<p style="text-align: center;">Loading history...</p>';
+        try {
+             const result = await fetch(`${API_PATH}?action=get_crop_details&crop_id=${cropId}`);
+             const data = await result.json();
+             
+             const historyList = document.getElementById('history-list');
+
+             if (data.success && data.history.length > 0) {
+                 historyList.innerHTML = '';
+                 data.history.forEach(item => {
+                     const historyItem = document.createElement('div');
+                     historyItem.className = 'detail-group';
+                     historyItem.innerHTML = `
+                         <div style="display: flex; justify-content: space-between;">
+                             <span><strong>${item.action_type.toUpperCase()}</strong></span>
+                             <span>${item.action_date.split(' ')[0]}</span>
+                         </div>
+                         <div class="detail-value" style="margin-top: 0.5rem;">${item.action_notes || 'No notes.'}</div>
+                     `;
+                     historyList.appendChild(historyItem);
+                 });
+             } else {
+                historyList.innerHTML = '<p style="text-align: center;">No history available for this crop.</p>';
+             }
+        } catch (error) {
+            document.getElementById('history-list').innerHTML = '<p class="notification error">Failed to load history.</p>';
+        }
+    }
+
+    async function addNewCrop(e) {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        formData.append('action', 'add_new_crop');
+        
+        const plantingDate = document.getElementById('add-planting-date').value;
+        formData.append('last_watered', plantingDate);
+
+        try {
+            const response = await fetch(API_PATH, { method: 'POST', body: formData });
+            const data = await response.json();
+            
+            if (data.success) {
+                showAddCropNotification('New crop added successfully!', 'success');
+                addCropModal.style.display = 'none';
+                loadCrops();
+            } else {
+                showAddCropNotification(data.message || 'Error adding crop', 'error');
+            }
+        } catch (error) {
+            showAddCropNotification('Network Error: Could not connect to API.', 'error');
+        }
+    }
+    
+    // --- INIT ---
+    document.addEventListener('DOMContentLoaded', loadCrops);
+
+    // BINDINGS
+    document.getElementById('btn-add-new-crop').addEventListener('click', () => {
+        document.getElementById('add-planting-date').valueAsDate = new Date();
+        addCropModal.style.display = 'flex';
+    });
+    document.getElementById('close-add-crop').addEventListener('click', () => addCropModal.style.display = 'none');
+    document.getElementById('btn-cancel-add').addEventListener('click', () => addCropModal.style.display = 'none');
+    document.getElementById('add-crop-form').addEventListener('submit', addNewCrop);
+</script>
 </body>
 
 </html>

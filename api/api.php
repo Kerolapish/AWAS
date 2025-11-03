@@ -1,5 +1,5 @@
 <?php
-// api/api.php - FINAL VERSION DENGAN SEMUA LOGIK CROPS (Fixed Action Parsing)
+// api/api.php - DISAHKAN DENGAN PEMERIKSAAN NILAI YANG TEPAT DAN SELAMAT
 
 // --- DEBUGGING ON & OUTPUT FIX ---
 ini_set('display_errors', 1);
@@ -14,26 +14,40 @@ include 'db.php';
 $openWeatherApiKey = '306515b318763e19aba681108b077d1c';
 // ---------------------
 
-$action = $_GET['action'] ?? ''; // Cuba ambil dari URL dahulu
+$action = $_GET['action'] ?? '';
 $user_id = $_SESSION['user_id'] ?? null;
 $method = $_SERVER['REQUEST_METHOD'];
 
 // Advanced input parsing for JSON, FormData, and Files
 $data = [];
+$get_params = $_GET; // Simpan GET params
+
 if ($method === 'POST' || $method === 'PUT') {
     $json_input = file_get_contents('php://input');
+    
+    // 1. Cuba parse JSON
     if ($json_input !== false) {
-        $data = json_decode($json_input, true);
+        $decoded_json = json_decode($json_input, true);
+        if (is_array($decoded_json)) {
+             $data = $decoded_json;
+        }
     }
+    
+    // 2. Jika input bukan JSON, guna FormData/$_POST (ini adalah laluan Crops)
     if (empty($data) && !empty($_POST)) {
         $data = $_POST;
     }
-    $data = array_merge($data, $_GET);
-} else {
-    $data = $_GET;
 }
 
-// *** FIX KRITIKAL: Semak dalam data borang jika action URL kosong ***
+// *** FIX KRITIKAL: Semak dan gabungkan $data dengan $_GET ***
+// Pastikan $data adalah array sebelum digabungkan
+if (!is_array($data)) {
+    $data = [];
+}
+// Gabungkan data POST/JSON dengan semua parameter GET
+$data = array_merge($data, $get_params); 
+
+// FIX KRITIKAL (Masalah "Invalid Action")
 if (empty($action) && isset($data['action'])) {
     $action = $data['action'];
 }
@@ -48,7 +62,7 @@ try {
 
     switch ($action) {
         
-        // --- AUTH --- (Kekalkan sama)
+        // --- AUTH --- (Logik kekal sama)
         case 'register':
             $fullName = $data['fullName'] ?? '';
             $email = $data['email'] ?? '';
@@ -78,7 +92,7 @@ try {
         case 'check_session':
             echo json_encode(['success' => true, 'auth' => true, 'name' => $_SESSION['user_name']]);
             break;
-        
+
         case 'logout':
             session_unset();
             session_destroy();
@@ -95,17 +109,8 @@ try {
             
         case 'add_new_crop':
             
-            // Pengurusan Upload File (Dibuang, tetapi logik $_FILES ditinggalkan supaya tidak crash)
-            $imageUrl = null;
-            if (isset($_FILES['crop_image']) && $_FILES['crop_image']['error'] == UPLOAD_ERR_OK) {
-                $uploadDir = '../uploads/';
-                if (!is_dir($uploadDir)) { mkdir($uploadDir, 0777, true); }
-                $fileName = time() . '_' . basename($_FILES['crop_image']['name']);
-                $targetPath = $uploadDir . $fileName;
-                if (move_uploaded_file($_FILES['crop_image']['tmp_name'], $targetPath)) {
-                    $imageUrl = 'uploads/' . $fileName; 
-                }
-            }
+            // Pengurusan Upload File DIBUANG sepenuhnya, tetapi kod ditinggalkan untuk rujukan
+            $imageUrl = null; 
             
             $plantingDate = $data['planting_date'] ?? null;
             $cropType = $data['crop_type'] ?? 'other'; 
@@ -119,7 +124,6 @@ try {
                 throw new Exception('Crop Name, Location, and Planting Date are required.');
             }
             
-            // Hitung Tarikh
             $nextFertilizationDate = date('Y-m-d', strtotime($plantingDate . ' +30 days'));
             
             $stmt = $conn->prepare("INSERT INTO user_crops 
@@ -138,10 +142,7 @@ try {
                  throw new Exception("Database INSERT failed. SQL Error: " . $e->getMessage());
             }
 
-            if (!$result) {
-                 throw new Exception('Database execution failed.');
-            }
-            
+            if (!$result) { throw new Exception('Database execution failed.'); }
             echo json_encode(['success' => true, 'message' => 'New crop added']);
             break;
         
@@ -161,9 +162,8 @@ try {
             break;
             
         case 'update_crop':
-            // Logik kemas kini dipermudahkan
             $cropId = $data['crop_id'] ?? 0;
-            $imageUrl = null; 
+            $imageUrl = null; // Ditetapkan NULL
             
             $stmt = $conn->prepare("UPDATE user_crops SET 
                 crop_name = ?, crop_type = ?, field_location = ?, planting_date = ?, 
