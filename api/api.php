@@ -203,7 +203,66 @@ try {
             $stmt->execute([$cropId, $user_id]);
             echo json_encode(['success' => true, 'message' => 'Crop deleted successfully.']);
             break;
+// api/api.php - Masukkan blok ini di tempat yang sesuai
 
+// --- LEDGER ---
+case 'get_ledger':
+    // Mengambil semua entri Ledger untuk tampilan list dan chart
+    $user_id = check_auth();
+    $stmt = $conn->prepare("SELECT * FROM ledger_entries WHERE user_id = ? ORDER BY date DESC");
+    $stmt->execute([$user_id]);
+    $entries = $stmt->fetchAll();
+    
+    $stmt_profit = $conn->prepare("SELECT crop, SUM(revenue - cost) as profit FROM ledger_entries WHERE user_id = ? GROUP BY crop");
+    $stmt_profit->execute([$user_id]);
+    $profits = $stmt_profit->fetchAll();
+    
+    echo json_encode(['success' => true, 'entries' => $entries, 'profits' => $profits]);
+    break;
+
+case 'add_ledger':
+case 'add_transaction': // <-- FIX UTAMA: Menerima action baru dari form kustom
+    $user_id = check_auth();
+    
+    // Asumsi: Frontend mengirim 'crop', 'revenue', 'cost', dan 'date'.
+    // Jika form kustom Anda hanya mengirim 'amount', Anda harus menyesuaikan 
+    // agar salah satu 'revenue' atau 'cost' mendapatkan nilai 'amount'.
+    
+    $stmt = $conn->prepare("INSERT INTO ledger_entries (user_id, crop, revenue, cost, date) VALUES (?, ?, ?, ?, ?)");
+    $stmt->execute([$user_id, $data['crop'], $data['revenue'], $data['cost'], $data['date']]);
+    echo json_encode(['success' => true, 'message' => 'Ledger entry added']);
+    break;
+    
+case 'delete_ledger':
+    $user_id = check_auth();
+    $id = $data['id'] ?? 0;
+    $stmt = $conn->prepare("DELETE FROM ledger_entries WHERE id = ? AND user_id = ?");
+    $stmt->execute([$id, $user_id]);
+    echo json_encode(['success' => true, 'message' => 'Ledger entry deleted']);
+    break;
+
+// --- REMINDERS ---
+case 'get_reminders':
+    $user_id = check_auth();
+    $stmt = $conn->prepare("SELECT * FROM reminders WHERE user_id = ? ORDER BY createdAt DESC");
+    $stmt->execute([$user_id]);
+    echo json_encode(['success' => true, 'reminders' => $stmt->fetchAll()]);
+    break;
+
+case 'add_reminder':
+    $user_id = check_auth();
+    $stmt = $conn->prepare("INSERT INTO reminders (user_id, text) VALUES (?, ?)");
+    $stmt->execute([$user_id, $data['text']]);
+    echo json_encode(['success' => true, 'message' => 'Reminder added']);
+    break;
+    
+case 'delete_reminder':
+    $user_id = check_auth();
+    $id = $data['id'] ?? 0;
+    $stmt = $conn->prepare("DELETE FROM reminders WHERE id = ? AND user_id = ?");
+    $stmt->execute([$id, $user_id]);
+    echo json_encode(['success' => true, 'message' => 'Reminder deleted']);
+    break;
         // --- WEATHER ---
         case 'get_weather':
             check_auth();
@@ -230,4 +289,5 @@ try {
 } catch (Exception $e) {
     echo json_encode(['success' => false, 'message' => $e->getMessage()]);
 }
+
 ?>
